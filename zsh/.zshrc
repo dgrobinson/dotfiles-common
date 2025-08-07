@@ -8,7 +8,7 @@ setopt NO_BEEP
 export ZSH="$HOME/.oh-my-zsh"
 
 # Theme
-ZSH_THEME="robbyrussell"
+ZSH_THEME="robbyrussell-fullpath"
 
 # Oh My Zsh settings
 HIST_STAMPS="yyyy-mm-dd"
