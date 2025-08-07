@@ -1,0 +1,35 @@
+{
+  "name": "local-themes",
+  "displayName": "Local Themes",
+  "publisher": "dgr",
+  "version": "0.0.1",
+  "description": "Personal colour themes stored in dotfiles",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": ["Themes"],
+  "contributes": {
+    "themes": [
+      {
+        "label": "OneDark-Pro",
+        "uiTheme": "vs-dark",
+        "path": "./themes/OneDark-Pro.json"
+      },
+      {
+        "label": "OneDark-Pro-darker",
+        "uiTheme": "vs-dark",
+        "path": "./themes/OneDark-Pro-darker.json"
+      },
+      {
+        "label": "OneDark-Pro-mix",
+        "uiTheme": "vs-dark",
+        "path": "./themes/OneDark-Pro-mix.json"
+      },
+      {
+        "label": "OneDark-Pro-night-flat",
+        "uiTheme": "vs-dark",
+        "path": "./themes/OneDark-Pro-night-flat.json"
+      }
+    ]
+  }
+}

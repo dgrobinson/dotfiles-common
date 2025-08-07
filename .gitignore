@@ -1,0 +1,15 @@
+# Oh My Zsh cache and log files
+zsh/oh-my-zsh/cache/
+zsh/oh-my-zsh/log/
+zsh/oh-my-zsh/custom/plugins/
+zsh/oh-my-zsh/custom/themes/
+!zsh/oh-my-zsh/custom/themes/robbyrussell-fullpath.zsh-theme
+
+# OS files
+.DS_Store
+*.swp
+*~
+
+# Editor files
+.vscode/
+.idea/

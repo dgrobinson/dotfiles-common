@@ -1,0 +1,118 @@
+# Common Git configuration
+# Shared between work and personal environments
+# User-specific settings should be in ~/.gitconfig.local
+
+[core]
+	editor = vim
+	pager = less -FRX
+	autocrlf = input
+	safecrlf = true
+	excludesfile = ~/.gitignore_global
+	attributesfile = ~/.gitattributes_global
+
+[color]
+	ui = auto
+	branch = auto
+	diff = auto
+	interactive = auto
+	status = auto
+
+[alias]
+	# Status and info
+	st = status -sb
+	s = status -sb
+	
+	# Commits
+	ci = commit
+	cm = commit -m
+	ca = commit -a
+	cam = commit -am
+	amend = commit --amend
+	amendf = commit --amend --no-edit
+	
+	# Branches
+	br = branch
+	co = checkout
+	cob = checkout -b
+	
+	# Diffs
+	d = diff
+	dc = diff --cached
+	ds = diff --stat
+	dcs = diff --cached --stat
+	
+	# Logs
+	l = log --oneline --graph --decorate
+	lg = log --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit
+	ll = log --pretty=format:'%C(yellow)%h%Cred%d %Creset%s%Cblue [%cn]' --decorate --numstat
+	hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
+	
+	# Working with remotes
+	f = fetch
+	pl = pull
+	ps = push
+	psu = push -u origin HEAD
+	
+	# Stashing
+	sl = stash list
+	sa = stash apply
+	ss = stash save
+	sp = stash pop
+	
+	# Reset and clean
+	unstage = reset HEAD --
+	undo = reset --soft HEAD^
+	clean-branches = !git branch --merged | grep -v '\\*\\|main\\|master\\|develop' | xargs -n 1 git branch -d
+	
+	# Finding
+	find = !git ls-files | grep -i
+	grep = grep -Ii
+	
+	# Useful helpers
+	aliases = config --get-regexp alias
+	whoami = config user.email
+	contributors = shortlog --summary --numbered
+	
+	# Show verbose output about tags, branches or remotes
+	tags = tag -l
+	branches = branch -a
+	remotes = remote -v
+
+[push]
+	default = current
+	followTags = true
+
+[pull]
+	rebase = true
+
+[merge]
+	tool = vimdiff
+	conflictstyle = diff3
+
+[diff]
+	tool = vimdiff
+	algorithm = patience
+	compactionHeuristic = true
+
+[status]
+	showUntrackedFiles = all
+
+[help]
+	autocorrect = 1
+
+[rerere]
+	enabled = true
+
+[rebase]
+	autosquash = true
+	autoStash = true
+
+[fetch]
+	prune = true
+
+[init]
+	defaultBranch = main
+
+# Include local overrides
+[include]
+	path = ~/.gitconfig.local
