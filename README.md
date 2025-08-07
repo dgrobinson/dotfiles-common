@@ -46,3 +46,7 @@ Each file sources or includes local overrides:
 - Vim: Personal/work specific settings can go in `~/.vimrc.local`
 - Zsh: Sources `~/.zshrc.local` for environment-specific settings
 - Git: Includes `~/.gitconfig.local` for user-specific configuration
+
+## Security
+
+Run `./setup-hooks.sh` to install a pre-commit hook that prevents accidentally committing sensitive data like API keys, passwords, or work-specific content to the common dotfiles.
