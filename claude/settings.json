@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Bash(ls *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(mkdir *)",
+      "Bash(cp *)",
+      "Bash(mv *)",
+      "Bash(rm *)",
+      "Bash(chmod *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(echo *)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(python3 *)",
+      "Bash(pip *)",
+      "Bash(pip3 *)",
+      "Bash(npm *)",
+      "Bash(yarn *)",
+      "Bash(node *)",
+      "Bash(docker *)",
+      "Bash(docker-compose *)",
+      "Bash(make *)",
+      "Bash(gh *)",
+      "Bash(open *)",
+      "Bash(code *)",
+      "Bash(ssh *)",
+      "Bash(rsync *)",
+      "Bash(tar *)",
+      "Bash(zip *)",
+      "Bash(unzip *)",
+      "Bash(touch *)"
+    ]
+  }
+}
