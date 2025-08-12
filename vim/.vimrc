@@ -135,6 +135,7 @@ Plugin 'vim-airline/vim-airline-themes'
 Plugin 'ctrlpvim/ctrlp.vim'
 Plugin 'junegunn/goyo.vim'
 Plugin 'junegunn/limelight.vim'
+Plugin 'morhetz/gruvbox'
 
 call vundle#end()
 filetype plugin indent on
@@ -210,7 +211,8 @@ augroup END
 " Set a default colorscheme that works in most terminals
 " Users can override this in their personal/work vimrc
 if has('gui_running') || has('termguicolors')
-  colorscheme desert
+  colorscheme gruvbox
+  set background=dark
 else
   colorscheme default
 endif
