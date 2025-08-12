@@ -204,6 +204,13 @@ bindkey '^R' history-incremental-search-backward
 [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
 
 #------------------------------
+# Claude local installation alias (if local installation exists)
+#------------------------------
+if [ -f "$HOME/.claude/local/claude" ]; then
+    alias claude="$HOME/.claude/local/claude"
+fi
+
+#------------------------------
 # Load local customizations
 #------------------------------
 # This allows for environment-specific overrides
