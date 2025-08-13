@@ -41,11 +41,17 @@ git commit -m "Update common submodule"
 
 ## Local Customization
 
-Each file sources or includes local overrides:
+This repository is wrapper-friendly and provides explicit extension points so you do not need to modify the submodule to customize per-environment:
 
-- Vim: Personal/work specific settings can go in `~/.vimrc.local`
+- Vim:
+  - Put settings/mappings in `~/.vimrc.local`
+  - Optional modular overrides in `~/.vimrc.d/*.vim` (loaded in sorted order)
+  - Optional extra plugins in `~/.vimrc.plugins` (only `Plugin 'owner/repo'` lines)
+  - Theme: set `let g:preferred_colorscheme = 'your-theme'` in `~/.vimrc.local`; falls back to `gruvbox`/`default` if unavailable
 - Zsh: Sources `~/.zshrc.local` for environment-specific settings
 - Git: Includes `~/.gitconfig.local` for user-specific configuration
+
+Wrapper repositories typically just symlink these local files from their `work/` or `personal/` areas and keep `~/.vimrc`, `~/.zshrc`, and `~/.gitconfig` pointing at common.
 
 ## Security
 

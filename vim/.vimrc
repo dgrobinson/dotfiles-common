@@ -11,6 +11,20 @@ filetype off                  " Required by Vundle before begin()
 set encoding=utf-8
 let mapleader=","
 
+"------------------------------
+" Local overrides (wrapper-friendly)
+"------------------------------
+" Source a single local override file early for variables/options/mappings
+if filereadable(expand('~/.vimrc.local'))
+  execute 'source' fnameescape(expand('~/.vimrc.local'))
+endif
+" Source all files in ~/.vimrc.d for modular overrides (sorted order)
+for s:f in split(glob('~/.vimrc.d/*.vim'), "\n")
+  if filereadable(s:f)
+    execute 'source' fnameescape(s:f)
+  endif
+endfor
+
 " Appearance
 " Better natural word-wrap in text/Markdown files
 augroup WordWrap
@@ -137,6 +151,11 @@ Plugin 'junegunn/goyo.vim'
 Plugin 'junegunn/limelight.vim'
 Plugin 'morhetz/gruvbox'
 
+" Allow wrappers to add plugins without modifying common
+if filereadable(expand('~/.vimrc.plugins'))
+  execute 'source' fnameescape(expand('~/.vimrc.plugins'))
+endif
+
 call vundle#end()
 filetype plugin indent on
 
@@ -209,10 +228,26 @@ augroup END
 " Color scheme
 "------------------------------
 " Set a default colorscheme that works in most terminals
-" Users can override this in their personal/work vimrc
-if has('gui_running') || has('termguicolors')
-  colorscheme gruvbox
-  set background=dark
+" Wrappers can set g:preferred_colorscheme in ~/.vimrc.local
+if exists('g:preferred_colorscheme')
+  if has('termguicolors')
+    set termguicolors
+  endif
+  try
+    execute 'colorscheme ' . g:preferred_colorscheme
+  catch
+    if has('gui_running') || has('termguicolors')
+      colorscheme gruvbox
+      set background=dark
+    else
+      colorscheme default
+    endif
+  endtry
 else
-  colorscheme default
+  if has('gui_running') || has('termguicolors')
+    colorscheme gruvbox
+    set background=dark
+  else
+    colorscheme default
+  endif
 endif
