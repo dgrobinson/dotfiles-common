@@ -224,6 +224,11 @@ augroup FileTypeSpecific
   autocmd FileType markdown setlocal spell spelllang=en_us
   autocmd FileType markdown setlocal comments=b:*,b:-,b:+,n:> formatoptions=tcroqln
   autocmd FileType markdown setlocal formatlistpat=^\\s*\\d\\+\\.\\s\\+\\\\|^\\s*[-*+]\\s\\+
+  " Tab/Shift-Tab for list indentation in markdown
+  autocmd FileType markdown inoremap <buffer> <Tab> <C-t>
+  autocmd FileType markdown inoremap <buffer> <S-Tab> <C-d>
+  autocmd FileType markdown vnoremap <buffer> <Tab> >gv
+  autocmd FileType markdown vnoremap <buffer> <S-Tab> <gv
 augroup END
 
 "------------------------------
