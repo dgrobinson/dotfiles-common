@@ -222,6 +222,8 @@ augroup FileTypeSpecific
   autocmd FileType yaml setlocal shiftwidth=2 tabstop=2 expandtab
   " Markdown
   autocmd FileType markdown setlocal spell spelllang=en_us
+  autocmd FileType markdown setlocal comments=b:*,b:-,b:+,n:> formatoptions=tcroqln
+  autocmd FileType markdown setlocal formatlistpat=^\\s*\\d\\+\\.\\s\\+\\\\|^\\s*[-*+]\\s\\+
 augroup END
 
 "------------------------------
