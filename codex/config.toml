@@ -1,0 +1,11 @@
+# Default Codex CLI configuration (TOML)
+# Notes:
+# - codex-cli 0.20.0 reads ~/.codex/config.toml
+# - These are sane defaults; per-project overrides can still be set via CLI flags or profiles.
+
+model = "o4-mini"
+ask_for_approval = "on-request"
+sandbox = "workspace-write"
+
+# Trusted projects (merged from previous local config)
+projects = { "/Users/dgrobinson/code/journal" = { trust_level = "trusted" } , "/Users/dgrobinson/code/dgr-dotfiles" = { trust_level = "trusted" } , "/Users/dgrobinson/code/dgr-dotfiles/common/codex" = { trust_level = "trusted" } }
