@@ -3,9 +3,102 @@
 # - codex-cli 0.20.0 reads ~/.codex/config.toml
 # - These are sane defaults; per-project overrides can still be set via CLI flags or profiles.
 
-model = "o4-mini"
+model = "gpt-5.2-codex"
 ask_for_approval = "on-request"
 sandbox = "workspace-write"
+model_reasoning_effort = "xhigh"
 
-# Trusted projects (merged from previous local config)
-projects = { "/Users/dgrobinson/code/journal" = { trust_level = "trusted" } , "/Users/dgrobinson/code/dgr-dotfiles" = { trust_level = "trusted" } , "/Users/dgrobinson/code/dgr-dotfiles/common/codex" = { trust_level = "trusted" } }
+# Projects (merged from previous local config)
+[projects."/Users/dgrobinson/code/journal"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/dgr-dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/dgr-dotfiles/common/codex"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/article-monster"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/orchestration"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/cloud-ready"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/docs-cleanup"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents"]
+trust_level = "untrusted"
+
+[projects."/Users/dgrobinson/code/agents/test-harness"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/debug-media"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/directives-cleaning"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/parser-bug-intake"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/kindle-loop"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/meta"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/vaults/dgr"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/Downloads"]
+trust_level = "untrusted"
+
+[projects."/Users/dgrobinson/code/return-reader"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-requests"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-cli"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-bootstrap"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-index"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-anchors"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-schema"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr-plugin"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/rr2"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/dgr-rr-content"]
+trust_level = "untrusted"
+
+[projects."/Users/dgrobinson/code/agents/am2"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code/agents/rr2"]
+trust_level = "trusted"
+
+[projects."/Users/dgrobinson/code"]
+trust_level = "untrusted"
+
+[projects."/Users/dgrobinson/code/dotfiles2"]
+trust_level = "trusted"
+
+[features]
+unified_exec = true
+shell_snapshot = true
