@@ -1,3 +1,16 @@
+function set_iterm_window_title() {
+  if [[ "$PWD" == "$HOME/code/agents/"* ]]; then
+    echo -ne "\033]2;${PWD##*/}\007"
+  fi
+}
+
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd set_iterm_window_title
+set_iterm_window_title
+
+
+
+
 # Common Zsh configuration
 # Shared between work and personal environments
 
