@@ -4,8 +4,30 @@ function set_iterm_window_title() {
   fi
 }
 
+function set_iterm_window_badge() {
+  if [[ "${TERM_PROGRAM:-}" != "iTerm.app" && -z "${ITERM_SESSION_ID:-}" ]]; then
+    return
+  fi
+
+  local badge=""
+  if [[ "$PWD" == "$HOME/code" || "$PWD" == "$HOME/code/"* ]]; then
+    if (( ${+functions[repo_relpath]} )); then
+      badge="$(repo_relpath)"
+    else
+      badge="${PWD/#$HOME/~}"
+    fi
+  fi
+
+  if command -v base64 >/dev/null 2>&1; then
+    local encoded
+    encoded=$(printf %s "$badge" | base64 | tr -d '\n')
+    printf '\033]1337;SetBadgeFormat=%s\007' "$encoded"
+  fi
+}
+
 autoload -Uz add-zsh-hook
 add-zsh-hook chpwd set_iterm_window_title
+add-zsh-hook chpwd set_iterm_window_badge
 set_iterm_window_title
 
 
@@ -53,6 +75,7 @@ plugins=(
 
 # Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
+set_iterm_window_badge
 
 #------------------------------
 # Common aliases
