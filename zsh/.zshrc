@@ -41,6 +41,7 @@ setopt NO_BEEP
 
 # Oh My Zsh installation
 export ZSH="$HOME/.oh-my-zsh"
+export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"
 
 # Theme
 ZSH_THEME="robbyrussell-fullpath"
