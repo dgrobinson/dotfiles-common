@@ -92,7 +92,7 @@ This repository is wrapper-friendly and provides explicit extension points so yo
 - Zsh:
   - Legacy extension point: `~/.zshrc.local` (sourced by the common `~/.zshrc` if present)
   - Recommended explicit layering for "work + home" setups:
-    - `~/.zshrc.common` (symlink to the common config in this repo)
+    - `~/.zshrc.common` (symlink to `zsh/.zshrc.common` in this repo; `zsh/.zshrc` is a compatibility shim)
     - `~/.zshrc.work` / `~/.zshrc.home` (machine-specific overrides)
     - `~/.zshrc.secrets` (untracked; API keys/tokens)
 - Git: Includes `~/.gitconfig.local` for user-specific configuration
