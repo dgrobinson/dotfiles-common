@@ -248,9 +248,12 @@ if [ -f "$HOME/.claude/local/claude" ]; then
 fi
 
 #------------------------------
-# Load local customizations
+# Local customization
 #------------------------------
-# This allows for environment-specific overrides
-# Work environments can source ~/.zshrc.work
-# Personal environments can source ~/.zshrc.personal
+# Legacy extension point:
+#   - ~/.zshrc.local (sourced if present)
+# Recommended explicit layering (see README):
+#   - ~/.zshrc.common (this file)
+#   - ~/.zshrc.work or ~/.zshrc.home
+#   - ~/.zshrc.secrets (untracked)
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

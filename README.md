@@ -89,10 +89,29 @@ This repository is wrapper-friendly and provides explicit extension points so yo
   - Optional modular overrides in `~/.vimrc.d/*.vim` (loaded in sorted order)
   - Optional extra plugins in `~/.vimrc.plugins` (only `Plugin 'owner/repo'` lines)
   - Theme: set `let g:preferred_colorscheme = 'your-theme'` in `~/.vimrc.local`; falls back to `gruvbox`/`default` if unavailable
-- Zsh: Sources `~/.zshrc.local` for environment-specific settings (you can source `~/.zshrc.secrets` from there for local-only secrets)
+- Zsh:
+  - Legacy extension point: `~/.zshrc.local` (sourced by the common `~/.zshrc` if present)
+  - Recommended explicit layering for "work + home" setups:
+    - `~/.zshrc.common` (symlink to the common config in this repo)
+    - `~/.zshrc.work` / `~/.zshrc.home` (machine-specific overrides)
+    - `~/.zshrc.secrets` (untracked; API keys/tokens)
 - Git: Includes `~/.gitconfig.local` for user-specific configuration
 
 Wrapper repositories typically just symlink these local files from their `work/` or `personal/` areas and keep `~/.vimrc`, `~/.zshrc`, and `~/.gitconfig` pointing at common.
+
+Example `~/.zshrc` dispatcher for a two-machine setup:
+
+```zsh
+# Shared config from the common repo
+[[ -f ~/.zshrc.common ]] && source ~/.zshrc.common
+
+# Untracked secrets (optional)
+[[ -f ~/.zshrc.secrets ]] && source ~/.zshrc.secrets
+
+# Machine-specific config (only one should exist per machine)
+[[ -f ~/.zshrc.work ]] && source ~/.zshrc.work
+[[ -f ~/.zshrc.home ]] && source ~/.zshrc.home
+```
 
 ## Security
 
