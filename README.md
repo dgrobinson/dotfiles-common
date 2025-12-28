@@ -113,6 +113,55 @@ Example `~/.zshrc` dispatcher for a two-machine setup:
 [[ -f ~/.zshrc.home ]] && source ~/.zshrc.home
 ```
 
+## Wrapper Install / Migration Checklist (Work + Home)
+
+This repo is intended to be consumed via a wrapper repo. If you are updating an
+existing machine to the newer explicit Zsh layering (`.zshrc.common/work/home/secrets`),
+use this checklist from inside the wrapper repo.
+
+1) Update the wrapper and initialize/update the submodule:
+
+```bash
+cd <wrapper-repo>
+git pull
+git submodule update --init --recursive
+```
+
+2) Run the wrapper installer (recommended). Use the profile that matches the machine:
+
+```bash
+./install.sh --profile home   # home machine
+./install.sh --profile work   # work machine
+```
+
+Tip: use `--dry-run` first to preview, and `--yes` to avoid interactive prompts.
+
+3) Verify Zsh is wired correctly:
+
+```bash
+readlink ~/.zshrc
+readlink ~/.zshrc.common
+ls -la ~/.zshrc.home ~/.zshrc.work 2>/dev/null || true
+zsh -lic 'echo ZSH_THEME=$ZSH_THEME; echo CLICOLOR=$CLICOLOR'
+```
+
+4) Create a local-only secrets file (never commit this):
+
+```bash
+touch ~/.zshrc.secrets
+chmod 600 ~/.zshrc.secrets
+```
+
+5) Restart your shell:
+
+```bash
+exec zsh
+```
+
+If you see "no colors" or an empty theme, it usually means `~/.zshrc` is not being
+sourced (or points at a stale/renamed path). The `readlink` checks above should
+make that obvious quickly.
+
 ## Security
 
 Run `./setup-hooks.sh` to install a pre-commit hook that prevents accidentally committing sensitive data like API keys, passwords, or work-specific content to the common dotfiles.
