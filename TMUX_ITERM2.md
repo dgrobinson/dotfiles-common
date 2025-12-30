@@ -101,8 +101,9 @@ Notes:
 - The script resolves the batch directory to an absolute path before creating
   worktrees, which avoids nesting worktrees under `.source` when you pass a
   relative batch path.
-- The printed commands export `CODEX_PROJECT_ROOT`, `CODEX_WORKTREE`, and
-  `CODEX_WORKTREE_NAME` before launching Codex.
+- The printed commands export `CODEX_PROJECT_ROOT` to the batch directory
+  (keeps `.source` inside the workspace-write sandbox) and set
+  `CODEX_WORKTREE`/`CODEX_WORKTREE_NAME` to the specific worktree.
 - Legacy tmux flags (for example `--iterm2`) are ignored.
 
 ## Troubleshooting

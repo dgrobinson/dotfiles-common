@@ -18,7 +18,8 @@ Label guidance:
 - If `CODEX_WORKTREE` is set, treat it as the project root for all file ops.
 - Use `CODEX_WORKTREE_NAME` to label outputs or logs when multiple agents run.
 - `codexplex` creates worktrees under a batch directory and prints per-worktree
-  commands (default: `codex -a never -s danger-full-access begin`) for manual launch.
+  commands (default: `codex -a never -s danger-full-access begin`) for manual launch,
+  setting `CODEX_PROJECT_ROOT` to the batch dir so `.source` stays inside the sandbox.
 - `codex-batch-panes` is a deprecated alias for `codexplex`.
 - If you need the git root, prefer `git -C "$CODEX_WORKTREE" rev-parse --show-toplevel`.
 

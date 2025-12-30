@@ -380,17 +380,19 @@ shell_escape() {
 command_for_dir() {
   local label="$1"
   local dir="$2"
+  local project_root="$batch_dir"
   local selected
   selected="$(command_for_label "$label")"
   printf 'cd %s; export CODEX_PROJECT_ROOT=%s; export CODEX_WORKTREE=%s; export CODEX_WORKTREE_NAME=%s; %s' \
     "$(shell_escape "$dir")" \
-    "$(shell_escape "$dir")" \
+    "$(shell_escape "$project_root")" \
     "$(shell_escape "$dir")" \
     "$(shell_escape "$label")" \
     "$selected"
 }
 
 echo "Batch dir: $batch_dir"
+echo "Project root (CODEX_PROJECT_ROOT): $batch_dir"
 echo "Worktrees:"
 for dir in "${dirs[@]}"; do
   label="$(basename "$dir")"
