@@ -13,12 +13,13 @@ Label guidance:
 - Use `<repo>:<task>` as the base label.
 - If you rerun the same task, append a short run id (e.g. `<repo>:<task>:2025-02-01a`) and reuse it for both before/after calls.
 
-## Batch panes / worktrees
+## Batch worktrees
 
 - If `CODEX_WORKTREE` is set, treat it as the project root for all file ops.
 - Use `CODEX_WORKTREE_NAME` to label outputs or logs when multiple agents run.
-- `codex-batch-panes` creates worktrees under a batch directory and launches
-  `codex -a never -s danger-full-access begin` in each pane by default.
+- `codexplex` creates worktrees under a batch directory and prints per-worktree
+  commands (default: `codex -a never -s danger-full-access begin`) for manual launch.
+- `codex-batch-panes` is a deprecated alias for `codexplex`.
 - If you need the git root, prefer `git -C "$CODEX_WORKTREE" rev-parse --show-toplevel`.
 
 ## Batch work structure

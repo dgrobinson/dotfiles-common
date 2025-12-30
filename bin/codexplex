@@ -1,0 +1,409 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: codexplex <batch-dir> [options]
+
+Create or update worktrees under <batch-dir>, then print per-worktree
+commands for manually starting Codex (default: "codex -a never -s danger-full-access begin").
+
+Options:
+  --repo URL|PATH  clone repo into <batch-dir>/.source and create worktrees
+  --agents N       number of agent worktrees to create (requires --repo)
+  --names LIST     comma-separated worktree names (requires --repo)
+  --names-file F   newline-separated worktree names (requires --repo)
+  --prefix PREFIX  worktree dir prefix for --agents (default: agent-)
+  --branch REF     base branch/ref for new worktrees (default: origin HEAD)
+  --branch-prefix P prefix for per-agent branches (default: agent/)
+  --detach         create detached worktrees (no per-agent branches)
+  --cmd CMD        command to include in instructions (overrides --safe/--danger)
+  --cmd-map FILE   per-worktree command map: "<name> <command>" per line
+  --safe           use default codex config ("codex begin")
+  --danger         use full-access mode (default)
+  -h, --help       show this help
+
+Note: tmux integration has been removed. Legacy tmux flags are ignored.
+EOF
+}
+
+die() {
+  echo "error: $*" >&2
+  exit 1
+}
+
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+require_command() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    die "$cmd is not installed"
+  fi
+}
+
+cmd_map_names=()
+cmd_map_cmds=()
+ignored_tmux_opts=()
+
+lookup_cmd_map() {
+  local name="$1"
+  local idx
+  for idx in "${!cmd_map_names[@]}"; do
+    if [[ "${cmd_map_names[$idx]}" == "$name" ]]; then
+      printf '%s' "${cmd_map_cmds[$idx]}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+batch_dir=""
+cmd_mode="danger"
+cmd_override=""
+cmd_map_file=""
+repo=""
+agent_count=""
+names_csv=""
+names_file=""
+prefix="agent-"
+base_branch=""
+branch_prefix="agent/"
+detach="false"
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --session)
+      [[ -n "${2:-}" ]] || die "--session requires a value"
+      ignored_tmux_opts+=("--session")
+      shift 2
+      ;;
+    --cmd)
+      cmd_override="${2:-}"
+      shift 2
+      ;;
+    --cmd-map)
+      cmd_map_file="${2:-}"
+      shift 2
+      ;;
+    --layout)
+      [[ -n "${2:-}" ]] || die "--layout requires a value"
+      ignored_tmux_opts+=("--layout")
+      shift 2
+      ;;
+    --repo)
+      repo="${2:-}"
+      shift 2
+      ;;
+    --agents)
+      agent_count="${2:-}"
+      shift 2
+      ;;
+    --names)
+      names_csv="${2:-}"
+      shift 2
+      ;;
+    --names-file)
+      names_file="${2:-}"
+      shift 2
+      ;;
+    --prefix)
+      prefix="${2:-}"
+      shift 2
+      ;;
+    --branch)
+      base_branch="${2:-}"
+      shift 2
+      ;;
+    --branch-prefix)
+      branch_prefix="${2:-}"
+      shift 2
+      ;;
+    --detach)
+      detach="true"
+      shift
+      ;;
+    --safe)
+      cmd_mode="safe"
+      shift
+      ;;
+    --danger)
+      cmd_mode="danger"
+      shift
+      ;;
+    --attach)
+      ignored_tmux_opts+=("--attach")
+      shift
+      ;;
+    --no-attach)
+      ignored_tmux_opts+=("--no-attach")
+      shift
+      ;;
+    --iterm2)
+      ignored_tmux_opts+=("--iterm2")
+      shift
+      ;;
+    --replace)
+      ignored_tmux_opts+=("--replace")
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    -*)
+      die "unknown option: $1"
+      ;;
+    *)
+      if [[ -z "$batch_dir" ]]; then
+        batch_dir="$1"
+      else
+        die "unexpected argument: $1"
+      fi
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "$batch_dir" ]]; then
+  usage
+  exit 1
+fi
+
+if [[ -n "$names_csv" && -n "$names_file" ]]; then
+  die "use only one of --names or --names-file"
+fi
+
+if [[ -n "$names_csv" && -n "$agent_count" ]]; then
+  die "use only one of --names or --agents"
+fi
+
+if [[ -n "$names_file" && -n "$agent_count" ]]; then
+  die "use only one of --names-file or --agents"
+fi
+
+if [[ -n "$agent_count" ]]; then
+  if [[ ! "$agent_count" =~ ^[0-9]+$ ]] || [[ "$agent_count" -lt 1 ]]; then
+    die "--agents must be a positive integer"
+  fi
+fi
+
+if [[ -n "$repo" ]]; then
+  mkdir -p "$batch_dir"
+elif [[ ! -d "$batch_dir" ]]; then
+  die "batch dir not found: $batch_dir"
+fi
+
+batch_dir="$(cd "$batch_dir" && pwd -P)"
+
+if [[ -n "$agent_count" || -n "$names_csv" || -n "$names_file" ]]; then
+  if [[ -z "$repo" ]]; then
+    die "--agents/--names require --repo"
+  fi
+fi
+
+if [[ -n "$repo" || -n "$agent_count" || -n "$names_csv" || -n "$names_file" ]]; then
+  require_command git
+fi
+
+if [[ -n "$cmd_override" ]]; then
+  cmd="$cmd_override"
+else
+  if [[ "$cmd_mode" == "safe" ]]; then
+    cmd="codex begin"
+  else
+    cmd="codex -a never -s danger-full-access begin"
+  fi
+fi
+
+if [[ -n "$cmd_map_file" ]]; then
+  if [[ ! -f "$cmd_map_file" ]]; then
+    die "cmd map file not found: $cmd_map_file"
+  fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="$(trim "$line")"
+    [[ -z "$line" ]] && continue
+    [[ "$line" == \#* ]] && continue
+    if [[ "$line" =~ ^([^[:space:]]+)[[:space:]]+(.+)$ ]]; then
+      cmd_map_names+=("${BASH_REMATCH[1]}")
+      cmd_map_cmds+=("${BASH_REMATCH[2]}")
+    else
+      die "invalid cmd map line: $line (expected: <name> <command>)"
+    fi
+  done < "$cmd_map_file"
+fi
+
+names=()
+if [[ -n "$names_csv" ]]; then
+  IFS=',' read -r -a raw_names <<< "$names_csv"
+  for name in "${raw_names[@]}"; do
+    name="$(trim "$name")"
+    [[ -n "$name" ]] && names+=("$name")
+  done
+elif [[ -n "$names_file" ]]; then
+  if [[ ! -f "$names_file" ]]; then
+    die "names file not found: $names_file"
+  fi
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line="${line%%#*}"
+    line="$(trim "$line")"
+    [[ -n "$line" ]] && names+=("$line")
+  done < "$names_file"
+elif [[ -n "$agent_count" ]]; then
+  width="${#agent_count}"
+  [[ "$width" -lt 2 ]] && width=2
+  for ((i=1; i<=agent_count; i++)); do
+    names+=("${prefix}$(printf "%0*d" "$width" "$i")")
+  done
+fi
+
+if [[ -n "$repo" ]]; then
+  source_dir="$batch_dir/.source"
+  if [[ -d "$source_dir" ]]; then
+    if [[ ! -d "$source_dir/.git" ]]; then
+      die "source dir exists but is not a git repo: $source_dir"
+    fi
+    existing_origin="$(git -C "$source_dir" config --get remote.origin.url || true)"
+    if [[ -n "$existing_origin" && "$existing_origin" != "$repo" ]]; then
+      die "source repo origin mismatch: $existing_origin (expected $repo)"
+    fi
+  else
+    git clone "$repo" "$source_dir"
+  fi
+
+  if [[ -z "$base_branch" ]]; then
+    base_branch="$(git -C "$source_dir" symbolic-ref -q --short refs/remotes/origin/HEAD || true)"
+    base_branch="${base_branch#origin/}"
+  fi
+
+  if [[ -z "$base_branch" ]]; then
+    if git -C "$source_dir" show-ref --verify --quiet refs/remotes/origin/main; then
+      base_branch="main"
+    elif git -C "$source_dir" show-ref --verify --quiet refs/remotes/origin/master; then
+      base_branch="master"
+    else
+      base_branch="main"
+    fi
+  fi
+
+  if [[ ${#names[@]} -gt 0 ]]; then
+    start_ref="origin/$base_branch"
+    if ! git -C "$source_dir" rev-parse --verify "$start_ref^{commit}" >/dev/null 2>&1; then
+      start_ref="$base_branch"
+      if ! git -C "$source_dir" rev-parse --verify "$start_ref^{commit}" >/dev/null 2>&1; then
+        die "base ref not found: $base_branch (use --branch)"
+      fi
+    fi
+
+    for name in "${names[@]}"; do
+      worktree_dir="$batch_dir/$name"
+      if [[ -e "$worktree_dir/.git" ]]; then
+        continue
+      fi
+      if [[ -e "$worktree_dir" ]]; then
+        die "path exists but is not a worktree: $worktree_dir"
+      fi
+      if [[ "$detach" == "true" ]]; then
+        git -C "$source_dir" worktree add --detach "$worktree_dir" "$start_ref"
+      else
+        branch_name="${branch_prefix}${name}"
+        if git -C "$source_dir" show-ref --verify --quiet "refs/heads/$branch_name"; then
+          git -C "$source_dir" worktree add "$worktree_dir" "$branch_name"
+        else
+          git -C "$source_dir" worktree add -b "$branch_name" "$worktree_dir" "$start_ref"
+        fi
+      fi
+    done
+  fi
+fi
+
+dirs=()
+if [[ ${#names[@]} -gt 0 ]]; then
+  for name in "${names[@]}"; do
+    dir="$batch_dir/$name"
+    [[ -e "$dir/.git" ]] || die "worktree missing: $dir"
+    dirs+=("$dir")
+  done
+else
+  for dir in "$batch_dir"/*; do
+    [[ -d "$dir" ]] || continue
+    [[ -e "$dir/.git" ]] || continue
+    dirs+=("$dir")
+  done
+fi
+
+if [[ ${#dirs[@]} -eq 0 ]]; then
+  die "no worktrees found in $batch_dir"
+fi
+
+if [[ ${#ignored_tmux_opts[@]} -gt 0 ]]; then
+  echo "note: tmux flags ignored (codexplex only sets up worktrees now): ${ignored_tmux_opts[*]}" >&2
+fi
+
+if [[ ${#cmd_map_names[@]} -gt 0 ]]; then
+  for mapped in "${cmd_map_names[@]}"; do
+    found="false"
+    for dir in "${dirs[@]}"; do
+      if [[ "$(basename "$dir")" == "$mapped" ]]; then
+        found="true"
+        break
+      fi
+    done
+    if [[ "$found" == "false" ]]; then
+      echo "warning: cmd map entry ignored (no matching worktree): $mapped" >&2
+    fi
+  done
+fi
+
+command_for_label() {
+  local label="$1"
+  local selected="$cmd"
+  local mapped
+  if mapped="$(lookup_cmd_map "$label")"; then
+    selected="$mapped"
+  fi
+  printf '%s' "$selected"
+}
+
+shell_escape() {
+  printf '%q' "$1"
+}
+
+command_for_dir() {
+  local label="$1"
+  local dir="$2"
+  local selected
+  selected="$(command_for_label "$label")"
+  printf 'cd %s; export CODEX_PROJECT_ROOT=%s; export CODEX_WORKTREE=%s; export CODEX_WORKTREE_NAME=%s; %s' \
+    "$(shell_escape "$dir")" \
+    "$(shell_escape "$dir")" \
+    "$(shell_escape "$dir")" \
+    "$(shell_escape "$label")" \
+    "$selected"
+}
+
+echo "Batch dir: $batch_dir"
+echo "Worktrees:"
+for dir in "${dirs[@]}"; do
+  label="$(basename "$dir")"
+  echo "  - $label: $dir"
+done
+
+echo ""
+echo "Manual setup (one iTerm2 window per worktree):"
+echo "Run the matching command in each window:"
+for dir in "${dirs[@]}"; do
+  label="$(basename "$dir")"
+  cmd_line="$(command_for_dir "$label" "$dir")"
+  echo ""
+  echo "[$label]"
+  echo "  $cmd_line"
+done
