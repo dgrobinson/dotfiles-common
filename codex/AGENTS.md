@@ -8,6 +8,8 @@ Workflow:
 - Before starting: `openai-usage --delta --label "<repo>:<task>"`
 - After finishing: run the same command with the same label.
 - Report the delta in the final response.
+  - If network access is restricted or the command fails due to DNS, rerun the
+    `openai-usage` call with escalated permissions to allow network access.
 
 Label guidance:
 - Use `<repo>:<task>` as the base label.
