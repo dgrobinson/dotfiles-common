@@ -1,30 +1,27 @@
 {
-    "security.workspace.trust.untrustedFiles": "open",
-    "workbench.colorTheme": "Monokai Dimmed",
-    "vim.enableNeovim": true,                 // optional but nice
-    "vim.useSystemClipboard": true,
-    "vim.incsearch": true,
-    "vim.easymotion": true,
-    "keyboard.dispatch": "keyCode"            // only if Caps↔Esc swapped via macOS
-    //  VSCode Vim custom semicolon behaviour
-"vim.insertModeKeyBindingsNonRecursive": [
-    {
-      "before": [";"],       // single ;  👉 leave Insert → Normal
-      "after": ["<Esc>"]
-    },
-    {
-      "before": [";", ";"],  // double ;; 👉 insert a literal ;
-      "after": [";"]
-    }
-  ],
-  
-  "vim.normalModeKeyBindingsNonRecursive": [
-    {
-      "before": [";"],       // single ;  👉 enter Insert mode
-      "after": ["i"]
-    }
-  ],
-  // how long (ms) VSCodeVim waits for a possible second key in a mapping
-"vim.timeout": 200        // 1000 is the default; 150-300 feels instant
+  "security.workspace.trust.untrustedFiles": "open",
+  "workbench.colorTheme": "Monokai Dimmed",
 
+  "vim.enableNeovim": true, // optional but nice
+  "vim.useSystemClipboard": true,
+  "vim.incsearch": true,
+  "vim.easymotion": true,
+
+  "keyboard.dispatch": "keyCode",
+
+  // VSCodeVim custom semicolon behavior:
+  // - single ; in Insert mode leaves Insert -> Normal
+  // - double ;; inserts a literal ;
+  "vim.insertModeKeyBindingsNonRecursive": [
+    { "before": [";"], "after": ["<Esc>"] },
+    { "before": [";", ";"], "after": [";"] }
+  ],
+
+  // In Normal mode, single ; enters Insert mode.
+  "vim.normalModeKeyBindingsNonRecursive": [
+    { "before": [";"], "after": ["i"] }
+  ],
+
+  // How long (ms) VSCodeVim waits for a possible second key in a mapping.
+  "vim.timeout": 200
 }
