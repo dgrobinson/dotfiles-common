@@ -25,19 +25,29 @@ This is faster and lighter than re-cloning a repo for every task/branch.
 
 Conventions:
 - Keep one "template" clone per repo that you do not edit day-to-day.
-  - Use it as the control center for creating/removing worktrees.
-- Create one worktree per task/branch as a sibling directory.
+  - In practice, organize worktrees under a single working directory like:
+    - `<working-dir>/template/` (full clone, stays on `main`)
+    - `<working-dir>/<agent-or-task>/` (one worktree per agent/task)
+- Create one worktree per agent/task as a sibling directory next to `template/`.
   - Worktrees share git objects (fast), but they do NOT share dependency installs (you still run `npm ci`, `pip install`, etc per worktree).
 
-Common commands (run from the template clone):
+Preferred workflow: `create-agent`
+
+When you're standing in `<working-dir>` (the parent of `template/`), use:
+- `create-agent foo`
+
+`create-agent` will:
+- `git fetch` + fast-forward `template/` to the latest `main`
+- create a sibling worktree at `<working-dir>/foo` (default branch: `agent/foo`)
+
+Equivalent git commands (run from `template/`):
 - Refresh remote refs: `git fetch origin`
-- New worktree on a new branch:
-  - `git worktree add ../wt-my-task -b dgr/my-task origin/main`
-- Worktree for an existing branch:
-  - `git worktree add ../wt-my-task dgr/my-task`
+- Update template main: `git checkout main && git pull --ff-only origin main`
+- New worktree on a new branch: `git worktree add -b agent/foo ../foo origin/main`
+- Worktree for an existing branch: `git worktree add ../foo agent/foo`
 - List worktrees: `git worktree list`
 - Remove a worktree directory when done:
-  - `git worktree remove ../wt-my-task`
+  - `git worktree remove ../foo`
   - (Optional) `git worktree prune`
 
 ## Batch worktrees (multiple parallel agents)
