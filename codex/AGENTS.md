@@ -22,6 +22,7 @@ Label guidance:
 
 - Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
 - When pushing isolated changes while other edits are present, use a clean worktree or cherry-pick into a fresh branch.
+- Run `./setup-hooks.sh` to install no-stash guardrails for this repo (blocks `git stash` and `--autostash`).
 
 ## Repo layout: template clone + git worktrees (preferred)
 

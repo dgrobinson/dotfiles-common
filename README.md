@@ -164,4 +164,4 @@ make that obvious quickly.
 
 ## Security
 
-Run `./setup-hooks.sh` to install a pre-commit hook that prevents accidentally committing sensitive data like API keys, passwords, or work-specific content to the common dotfiles.
+Run `./setup-hooks.sh` to install guardrails for the common dotfiles repo: a pre-commit hook to block sensitive data and a no-stash setup that disables `git stash` and `--autostash`.

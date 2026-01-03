@@ -82,3 +82,15 @@ EOF
 
 chmod +x "$HOOKS_DIR/pre-commit"
 echo "Pre-commit hook installed successfully!"
+
+git -C "$REPO_ROOT" config --local rebase.autostash false
+git -C "$REPO_ROOT" config --local merge.autostash false
+git -C "$REPO_ROOT" config --local alias.stash \
+  '!echo "ERROR: git stash is disabled in this repo. Use a clean worktree instead." >&2; exit 1'
+git -C "$REPO_ROOT" config --local alias.pull \
+  '!f(){ for arg in "$@"; do if [ "$arg" = "--autostash" ]; then echo "ERROR: --autostash is disabled in this repo. Use a clean worktree instead." >&2; exit 1; fi; done; command git -c alias.pull= pull "$@"; }; f'
+git -C "$REPO_ROOT" config --local alias.rebase \
+  '!f(){ for arg in "$@"; do if [ "$arg" = "--autostash" ]; then echo "ERROR: --autostash is disabled in this repo. Use a clean worktree instead." >&2; exit 1; fi; done; command git -c alias.rebase= rebase "$@"; }; f'
+git -C "$REPO_ROOT" config --local alias.merge \
+  '!f(){ for arg in "$@"; do if [ "$arg" = "--autostash" ]; then echo "ERROR: --autostash is disabled in this repo. Use a clean worktree instead." >&2; exit 1; fi; done; command git -c alias.merge= merge "$@"; }; f'
+echo "No-stash guardrails configured successfully!"
