@@ -18,6 +18,11 @@ Label guidance:
 - Use `<repo>:<task>` as the base label.
 - If you rerun the same task, append a short run id (e.g. `<repo>:<task>:2025-02-01a`) and reuse it for both before/after calls.
 
+## Repo guardrails
+
+- Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
+- When pushing isolated changes while other edits are present, use a clean worktree or cherry-pick into a fresh branch.
+
 ## Repo layout: template clone + git worktrees (preferred)
 
 ELI5: A `git worktree` is an extra working folder that shares the same underlying git history as a base clone.
