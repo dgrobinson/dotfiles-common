@@ -14,3 +14,4 @@ _zsh_common_dir="${${(%):-%N}:A:h}"
 [[ -f "$_zsh_common_dir/.zshrc.common" ]] && source "$_zsh_common_dir/.zshrc.common"
 unset _zsh_common_dir
 
+test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
