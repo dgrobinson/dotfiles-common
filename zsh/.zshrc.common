@@ -250,10 +250,10 @@ fi
 #------------------------------
 # Local customization
 #------------------------------
-# Legacy extension point:
-#   - ~/.zshrc.local (sourced if present)
-# Recommended explicit layering (see README):
+# Preferred layering (see README):
 #   - ~/.zshrc.common (this file)
-#   - ~/.zshrc.work or ~/.zshrc.home
 #   - ~/.zshrc.secrets (untracked)
-[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+#   - ~/.zshrc.work or ~/.zshrc.home
+[[ -f ~/.zshrc.secrets ]] && source ~/.zshrc.secrets
+[[ -f ~/.zshrc.work ]] && source ~/.zshrc.work
+[[ -f ~/.zshrc.home ]] && source ~/.zshrc.home
