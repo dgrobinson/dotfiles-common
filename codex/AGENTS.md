@@ -3,21 +3,6 @@
 This file is my global guidance for Codex (applies across repos).
 Do not add secrets here.
 
-## Spend tracking
-
-Use the `openai-usage` wrapper for any task expected to cost more than $1.
-
-Workflow:
-- Before starting: `openai-usage --delta --label "<repo>:<task>"`
-- After finishing: run the same command with the same label.
-- Report the delta in the final response.
-  - If network access is restricted or the command fails due to DNS, rerun the
-    `openai-usage` call with escalated permissions to allow network access.
-
-Label guidance:
-- Use `<repo>:<task>` as the base label.
-- If you rerun the same task, append a short run id (e.g. `<repo>:<task>:2025-02-01a`) and reuse it for both before/after calls.
-
 ## Repo guardrails
 
 - Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
