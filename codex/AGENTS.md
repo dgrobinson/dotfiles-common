@@ -2,7 +2,6 @@
 
 This file is my global guidance for Codex (applies across repos).
 Do not add secrets here.
-
 ## Repo guardrails
 
 - Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
