@@ -81,3 +81,8 @@ If you need the git root, prefer:
 - Name batches as a themed series (e.g., trees: arbor, birch, cypress; nautical: anchor, bowline, compass).
 - Track each batch under `docs/batches/<batch-name>` at the repo root while work is active.
 - When a batch is complete, move its record to `docs/archived/<batch-name>`.
+
+## PR reference style
+
+- When referencing a GitHub pull request, include both the PR number and a human-friendly ref name (usually the branch name and/or worktree/window name), so readers do not have to memorize which PR is which.
+  - Example: `PR #423 (agent/birch-parity-guardrails)` rather than `PR #423`.
