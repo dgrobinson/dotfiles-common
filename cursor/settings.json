@@ -23,5 +23,6 @@
   ],
 
   // How long (ms) VSCodeVim waits for a possible second key in a mapping.
-  "vim.timeout": 200
+  "vim.timeout": 200,
+  "git.openRepositoryInParentFolders": "always"
 }
