@@ -34,6 +34,7 @@ git -C common push origin main
 git add common
 git commit -m "Update common submodule"
 ```
+If pushes are flaky from a work environment, follow `references/push-from-work.md`.
 
 ## Workflow
 
@@ -68,6 +69,7 @@ git commit -m "Update common submodule"
 - Commit `common` first and push to `origin/main`.
 - Then commit wrapper submodule pointer update (`common` entry) separately.
 - If wrapper has unrelated modified files, keep them unstaged unless requested.
+- If pushes fail/hang in work environments, use the fallback sequences in `references/push-from-work.md`.
 
 ## Notes
 - Shared skills should live under `common/codex/skills/<skill-name>`.
@@ -79,3 +81,4 @@ git commit -m "Update common submodule"
 
 - `scripts/dotfiles_snapshot.sh`: one-command status snapshot across wrapper + common plus profile guess.
 - `references/routing.md`: path routing rules (`work` vs `home` vs `common` vs wrapper).
+- `references/push-from-work.md`: repeatable push/rebase/auth fallback flow for common and wrapper repos.

@@ -35,6 +35,8 @@ git add common
 git commit -m "Update common submodule"
 ```
 
+If `git push` is unreliable from a work environment, apply `push-from-work.md`.
+
 If you changed only `work/` or `home/`, commit in wrapper repo only.
 
 ## Keep Unrelated Work Safe
