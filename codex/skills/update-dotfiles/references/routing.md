@@ -13,10 +13,12 @@ If the setting only makes sense for one environment, keep it in that environment
 ## Path Routing
 
 - `work/**`: Work overlay files for this wrapper repo.
+- `work/codex/skills/**`: Work-machine-only Codex skills. Default here unless you explicitly want the skill shared.
 - `home/**`: Home overlay files for this wrapper repo.
+- `home/codex/skills/**`: Home-machine-only Codex skills.
 - `common/**`: Shared defaults and tooling in the common submodule.
 - `install.sh`, `bin/**`, top-level `AGENTS.md`: Wrapper glue and workflow docs for this wrapper.
-- `common/codex/skills/**`: Shared Codex skills; prefer this for skills you want in both environments.
+- `common/codex/skills/**`: Shared Codex skills; use this only for skills you want in both environments.
 
 ## Commit Routing
 

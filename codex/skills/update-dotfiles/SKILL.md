@@ -57,6 +57,7 @@ If pushes are flaky from a work environment, follow `references/push-from-work.m
 4) Route edits to correct layer
 - OpenAI/work-machine-specific settings belong in `work/`.
 - Home-machine-specific settings belong in `home/`.
+- Work-only Codex skills belong in `work/codex/skills/`.
 - Shared defaults, shared skills, and shared tooling belong in `common/`.
 - Wrapper glue (`install.sh`, `bin/create-agent`, wrapper `AGENTS.md`) belongs in wrapper root repo.
 
@@ -72,10 +73,14 @@ If pushes are flaky from a work environment, follow `references/push-from-work.m
 - If pushes fail/hang in work environments, use the fallback sequences in `references/push-from-work.md`.
 
 ## Notes
+- Work-local skills should live under `work/codex/skills/<skill-name>` (or `home/...` on a home machine).
+- To edit a work-local skill via `~/.codex/skills`, symlink:
+  - `~/.codex/skills/<skill-name> -> <wrapper>/<profile>/codex/skills/<skill-name>`
 - Shared skills should live under `common/codex/skills/<skill-name>`.
 - To edit a shared skill via `~/.codex/skills`, symlink:
   - `~/.codex/skills/<skill-name> -> <wrapper>/common/codex/skills/<skill-name>`
-- This makes local edits appear as normal unstaged git changes in `common`.
+- Profile-local skills keep work/home changes out of `common`.
+- Shared-skill edits appear as normal unstaged git changes in `common`.
 
 ## Resources
 
