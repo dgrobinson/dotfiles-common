@@ -71,6 +71,46 @@ CONTENT_TYPE_IMAGE_EXT = {
     "image/webp": ".webp",
 }
 LATEX_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".pdf"}
+CONTENT_HINT_TOKENS = (
+    "article",
+    "entry-content",
+    "post-content",
+    "post_content",
+    "post-body",
+    "article-body",
+    "article-content",
+    "story-body",
+    "content-body",
+    "main",
+    "prose",
+    "markdown-body",
+    "text-inner",
+    "rich-text",
+)
+CHROME_HINT_TOKENS = (
+    "nav",
+    "menu",
+    "header",
+    "footer",
+    "sidebar",
+    "breadcrumb",
+    "popup",
+    "overlay",
+    "modal",
+    "subscribe",
+    "newsletter",
+    "login",
+    "signin",
+    "related",
+    "comments",
+    "comment-form",
+    "social",
+    "share",
+    "cookie",
+    "pricing",
+    "ad-",
+    "advert",
+)
 
 
 def normalize_text(s: str) -> str:
@@ -514,10 +554,117 @@ class Converter:
 
 
 def extract_main(soup: BeautifulSoup) -> Tag:
-    for selector in ["main", "article", "#content", "#main", ".content", ".post", ".article"]:
-        node = soup.select_one(selector)
-        if node:
-            return node
+    def signature(node: Tag) -> str:
+        return collapse_ws(
+            " ".join(
+                [
+                    node.name or "",
+                    str(node.get("id") or ""),
+                    " ".join(node.get("class") or []),
+                ]
+            )
+        ).lower()
+
+    def metrics(node: Tag) -> dict[str, int]:
+        p_tags = node.find_all("p")
+        paragraph_words = sum(word_count(p.get_text(" ", strip=True)) for p in p_tags)
+        total_words = word_count(node.get_text(" ", strip=True))
+        return {
+            "paragraph_words": paragraph_words,
+            "paragraph_count": len(p_tags),
+            "heading_count": len(node.find_all(["h1", "h2", "h3"])),
+            "link_count": len(node.find_all("a")),
+            "list_count": len(node.find_all("li")),
+            "tag_count": len(node.find_all(True)),
+            "total_words": total_words,
+            "non_paragraph_words": max(total_words - paragraph_words, 0),
+        }
+
+    def score(node: Tag) -> int:
+        data = metrics(node)
+        if data["total_words"] == 0:
+            return -10**9
+
+        sig = signature(node)
+        value = 0
+        value += data["paragraph_words"]
+        value += data["paragraph_count"] * 46
+        value += data["heading_count"] * 18
+        value -= int(data["tag_count"] * 1.7)
+        value -= data["list_count"] * 4
+        value -= data["link_count"] * 2
+        value -= int(data["non_paragraph_words"] * 0.55)
+
+        if data["paragraph_count"] < 2:
+            value -= 260
+        if data["paragraph_words"] < 120:
+            value -= 320
+        if data["paragraph_words"] < 40:
+            value -= 700
+        if data["link_count"] > data["paragraph_count"] * 3 and data["paragraph_count"] < 6:
+            value -= 220
+
+        for token in CONTENT_HINT_TOKENS:
+            if token in sig:
+                value += 120
+        for token in CHROME_HINT_TOKENS:
+            if token in sig:
+                value -= 220
+        return value
+
+    selectors = [
+        "main",
+        "[role='main']",
+        "article",
+        "#content",
+        "#main",
+        ".content",
+        ".entry-content",
+        ".post-content",
+        ".post_content",
+        ".post-body",
+        ".article",
+        ".article-body",
+        ".article-content",
+        ".story-body",
+        ".et_pb_post_content",
+        ".markdown-body",
+        ".prose",
+    ]
+
+    candidates: list[Tag] = []
+    seen: set[int] = set()
+    for selector in selectors:
+        for node in soup.select(selector):
+            node_id = id(node)
+            if node_id in seen:
+                continue
+            seen.add(node_id)
+            candidates.append(node)
+
+    rich_candidate = False
+    for node in candidates:
+        if metrics(node)["paragraph_words"] >= 220:
+            rich_candidate = True
+            break
+
+    if not rich_candidate:
+        for node in soup.find_all(["article", "main", "section", "div"]):
+            node_id = id(node)
+            if node_id in seen:
+                continue
+            sig = signature(node)
+            if any(token in sig for token in CHROME_HINT_TOKENS):
+                continue
+            if not any(token in sig for token in CONTENT_HINT_TOKENS):
+                if len(node.find_all("p", limit=4)) < 3:
+                    continue
+            seen.add(node_id)
+            candidates.append(node)
+
+    if candidates:
+        return max(candidates, key=score)
+
     body = soup.find("body")
     return body if body else soup
 
