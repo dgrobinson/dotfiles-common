@@ -247,13 +247,5 @@ if [ -f "$HOME/.claude/local/claude" ]; then
     alias claude="$HOME/.claude/local/claude"
 fi
 
-#------------------------------
-# Local customization
-#------------------------------
-# Preferred layering (see README):
-#   - ~/.zshrc.common (this file)
-#   - ~/.zshrc.secrets (untracked)
-#   - ~/.zshrc.work or ~/.zshrc.home
-[[ -f ~/.zshrc.secrets ]] && source ~/.zshrc.secrets
-[[ -f ~/.zshrc.work ]] && source ~/.zshrc.work
-[[ -f ~/.zshrc.home ]] && source ~/.zshrc.home
+# Local customization is dispatched by the wrapper's `~/.zshrc`.
+# Keep this file shared-only so profile overlays are not sourced twice.
