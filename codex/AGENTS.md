@@ -7,6 +7,8 @@ Do not add secrets here.
 - Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
 - When pushing isolated changes while other edits are present, use a clean worktree or cherry-pick into a fresh branch.
 - Run `./setup-hooks.sh` to install no-stash guardrails for this repo (blocks `git stash` and `--autostash`).
+- At session start in a git repo, fetch and compare the current checkout to the repo's upstream default branch before substantive work.
+- If a local default-branch checkout has uncommitted changes and is behind or diverged from upstream, do not continue in place. Move the work to a fresh worktree from current upstream instead.
 
 ## Repo layout: template clone + git worktrees (preferred)
 
