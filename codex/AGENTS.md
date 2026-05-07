@@ -10,6 +10,13 @@ Do not add secrets here.
 - At session start in a git repo, fetch and compare the current checkout to the repo's upstream default branch before substantive work.
 - If a local default-branch checkout has uncommitted changes and is behind or diverged from upstream, do not continue in place. Move the work to a fresh worktree from current upstream instead.
 
+## Engineering guidance
+
+- Prefer the simplest change that makes the code easier to understand next time.
+- Before adding a new abstraction, ask whether it reduces cognitive complexity across the repo, not just whether it makes the current patch look cleaner.
+- Do not add trivial helpers, wrapper types, fallback layers, or mini-frameworks for simple logic.
+- When existing AI-generated code looks strange and there is no real historical reason for it, it is acceptable to simplify or delete it instead of preserving it as legacy design.
+
 ## Repo layout: template clone + git worktrees (preferred)
 
 ELI5: A `git worktree` is an extra working folder that shares the same underlying git history as a base clone.
