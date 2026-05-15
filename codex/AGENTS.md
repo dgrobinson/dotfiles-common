@@ -17,6 +17,14 @@ Do not add secrets here.
 - Do not add trivial helpers, wrapper types, fallback layers, or mini-frameworks for simple logic.
 - When existing AI-generated code looks strange and there is no real historical reason for it, it is acceptable to simplify or delete it instead of preserving it as legacy design.
 
+## Practice What We Preach
+
+Guidance is training data. When a note is meant to shape future agents, write it in the voice you want copied: bottom line first, useful distinction early, caveat beside claim, evidence inline.
+
+Put judgment before evidence. Raw notes can preserve the source trail; agent-facing docs should give the clean mental model first, then point into the raw pack when the reader needs to check it.
+
+Keep instruction layers clean: cross-repo Codex defaults here, repo rules in the nearest `AGENTS.md`, vault writing rules in `~/vault/AGENTS.md` and `~/vault/agent-guidance/`.
+
 ## Repo layout: template clone + git worktrees (preferred)
 
 ELI5: A `git worktree` is an extra working folder that shares the same underlying git history as a base clone.
