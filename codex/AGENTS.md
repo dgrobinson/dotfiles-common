@@ -104,6 +104,8 @@ If you need the git root, prefer:
   - Collaboration vault: `/home/codex/vaults/dgr-collab`, cloned from private repo `dgrobinson/dgr-collab`, and intended as the writable agent workspace.
 - The local collab vault at `/Users/dgrobinson/vaults/dgr-collab` is backed by private GitHub repo `dgrobinson/dgr-collab`.
 - `vault-mcp` is cloned on the box at `/home/codex/code/vault-mcp`, built with npm, and registered in remote Codex as MCP server `vault-mcp`.
+- `dgr-collab` is vault content only. Do not add sync scripts, service files, binaries, or operational tooling to that repo; keep automation in dotfiles or machine-local service config.
+- Vault propagation uses the dotfiles helper `dgr-collab-sync` outside the vault. It commits stageable local changes, pulls/rebases from `origin/main`, pushes, and fails closed on conflicts.
 - DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
 - Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
 - Before assuming the cloud state, verify it:

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REPO=${VAULT_SYNC_REPO:-}
+REMOTE=${VAULT_SYNC_REMOTE:-origin}
+BRANCH=${VAULT_SYNC_BRANCH:-main}
+LOG_DIR=${VAULT_SYNC_LOG_DIR:-"$HOME/.local/state/dgr-collab-sync"}
+LOG_FILE="$LOG_DIR/sync.log"
+
+if [ -z "$REPO" ]; then
+  if [ -d "$HOME/vaults/dgr-collab/.git" ]; then
+    REPO="$HOME/vaults/dgr-collab"
+  else
+    echo "VAULT_SYNC_REPO is required when ~/vaults/dgr-collab is not present" >&2
+    exit 2
+  fi
+fi
+
+mkdir -p "$LOG_DIR"
+
+log() {
+  printf '%s %s\n' "$(date -u '+%Y-%m-%dT%H:%M:%SZ')" "$*" | tee -a "$LOG_FILE"
+}
+
+fail() {
+  log "ERROR: $*"
+  exit 1
+}
+
+hash_repo() {
+  if command -v shasum >/dev/null 2>&1; then
+    printf '%s' "$REPO" | shasum | awk '{print $1}'
+  else
+    printf '%s' "$REPO" | sha1sum | awk '{print $1}'
+  fi
+}
+
+LOCK_BASE=${TMPDIR:-/tmp}
+LOCK_DIR="$LOCK_BASE/dgr-collab-sync-$(hash_repo).lock"
+
+if ! mkdir "$LOCK_DIR" 2>/dev/null; then
+  log "another sync is already running; exiting"
+  exit 0
+fi
+trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT
+
+git -C "$REPO" rev-parse --is-inside-work-tree >/dev/null 2>&1 || fail "not a git repository: $REPO"
+
+git_dir=$(git -C "$REPO" rev-parse --git-dir)
+if [ -d "$git_dir/rebase-merge" ] || [ -d "$git_dir/rebase-apply" ] || [ -f "$git_dir/MERGE_HEAD" ]; then
+  fail "repository has an unfinished merge or rebase"
+fi
+
+current_branch=$(git -C "$REPO" branch --show-current)
+if [ "$current_branch" != "$BRANCH" ]; then
+  fail "expected branch $BRANCH, found ${current_branch:-detached}"
+fi
+
+has_worktree_changes() {
+  [ -n "$(git -C "$REPO" status --porcelain)" ]
+}
+
+commit_subject() {
+  local paths notes first_note count
+  paths=$(git -C "$REPO" diff --cached --name-only --diff-filter=ACMR)
+  notes=$(printf '%s\n' "$paths" | awk '/^(notes|projects)\// { print }')
+  count=$(printf '%s\n' "$notes" | sed '/^$/d' | wc -l | tr -d ' ')
+  first_note=$(printf '%s\n' "$notes" | sed -n '1p')
+
+  if [ "$count" = "1" ] && [ -n "$first_note" ]; then
+    printf 'Update %s\n' "$first_note"
+  elif [ "$count" -gt 1 ]; then
+    printf 'Sync collab vault notes\n'
+  else
+    printf 'Sync collab vault changes\n'
+  fi
+}
+
+commit_changes() {
+  git -C "$REPO" add -A
+
+  if git -C "$REPO" diff --cached --quiet; then
+    log "worktree had changes, but nothing stageable after gitignore rules"
+    return 0
+  fi
+
+  local subject body
+  subject=$(commit_subject)
+  body=$(
+    printf 'Changed paths:\n'
+    git -C "$REPO" diff --cached --name-only | sed 's/^/- /'
+  )
+
+  git -C "$REPO" commit -m "$subject" -m "$body"
+  log "committed: $subject"
+}
+
+sync_remote() {
+  git -C "$REPO" fetch --prune "$REMOTE" "$BRANCH"
+
+  if ! git -C "$REPO" show-ref --verify --quiet "refs/remotes/$REMOTE/$BRANCH"; then
+    fail "missing remote ref $REMOTE/$BRANCH"
+  fi
+
+  if git -C "$REPO" merge-base --is-ancestor "$REMOTE/$BRANCH" HEAD; then
+    if git -C "$REPO" merge-base --is-ancestor HEAD "$REMOTE/$BRANCH"; then
+      log "already up to date"
+      return 0
+    fi
+    git -C "$REPO" push "$REMOTE" "HEAD:$BRANCH"
+    log "pushed local commits"
+    return 0
+  fi
+
+  git -C "$REPO" rebase "$REMOTE/$BRANCH" || fail "rebase conflict; manual resolution required"
+  git -C "$REPO" push "$REMOTE" "HEAD:$BRANCH"
+  log "rebased onto remote and pushed"
+}
+
+log "sync start: $REPO"
+
+if has_worktree_changes; then
+  commit_changes
+fi
+
+sync_remote
+
+log "sync complete"
