@@ -87,3 +87,25 @@ If you need the git root, prefer:
 
 - When referencing a GitHub pull request, include both the PR number and a human-friendly ref name (usually the branch name and/or worktree/window name), so readers do not have to memorize which PR is which.
   - Example: `PR #423 (agent/birch-parity-guardrails)` rather than `PR #423`.
+
+## Remote Codex box on DigitalOcean
+
+- The current remote Codex Droplet is `codex-box` at `157.245.81.87`.
+  - Local SSH shortcut: `ssh codex-box`
+  - DigitalOcean ID: `571314844`
+  - Region/size: `nyc1`, `s-2vcpu-4gb` (about $24/month while it exists)
+  - OS: Ubuntu 24.04
+- This box replaced the old `homespace-staging` Droplet, which was destroyed on May 16, 2026.
+- The box has Node.js 20, Git, GitHub CLI, Codex CLI, Python, build tools, ripgrep, tmux, and zsh installed.
+- The box has the dotfiles wrapper cloned at `/home/codex/code/dgr-dotfiles`; helper scripts are available as `create-agent`, `codexplex`, and `codex-batch-panes`.
+- GitHub operations on the box use `gh` HTTPS credentials plus URL rewriting for `git@github.com:` remotes and submodules.
+- Vaults on the box:
+  - Main vault: `/home/codex/vaults/dgr`, cloned from private repo `dgrobinson/dgr-obsidian`, and intended as read-only source material.
+  - Collaboration vault: `/home/codex/vaults/dgr-collab`, cloned from private repo `dgrobinson/dgr-collab`, and intended as the writable agent workspace.
+- The local collab vault at `/Users/dgrobinson/vaults/dgr-collab` is backed by private GitHub repo `dgrobinson/dgr-collab`.
+- `vault-mcp` is cloned on the box at `/home/codex/code/vault-mcp`, built with npm, and registered in remote Codex as MCP server `vault-mcp`.
+- DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
+- Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
+- Before assuming the cloud state, verify it:
+  - `doctl compute droplet list`
+  - `doctl databases list`
