@@ -8,6 +8,8 @@ This repository contains shared configuration files used across both work and pe
 - **zsh/**: Common Zsh configuration, oh-my-zsh, and aliases
 - **git/**: Common Git configuration and global gitignore
 - **cursor/**: Cursor editor settings and themes
+- **bin/**: Shared helper scripts, including portable vault MCP/git-sync
+  launchers
 
 ## Usage
 
@@ -96,6 +98,33 @@ This repository is wrapper-friendly and provides explicit extension points so yo
     - `~/.zshrc.work` / `~/.zshrc.home` (machine-specific overrides)
     - `~/.zshrc.secrets` (untracked; API keys/tokens)
 - Git: Includes `~/.gitconfig.local` for user-specific configuration
+
+## Shared vault helpers
+
+`bin/` includes a small set of portable vault helpers that wrappers can symlink
+into `~/.local/bin`:
+
+- `vault-mcp-stdio`: starts a local `vault-mcp` checkout in stdio mode
+- `dgr-vault-git-sync`: commits/rebases/pushes a vault checkout
+- `install-dgr-vault-sync-schedule` / `uninstall-dgr-vault-sync-schedule`:
+  install or remove a frequent launchd/cron sync schedule
+
+The helpers intentionally avoid private/company-specific defaults. By default
+they look for `~/code/vault-mcp` and `~/vault`. If a machine should bootstrap a
+missing vault checkout, set both `DGR_VAULT_REPO_ROOT` and
+`DGR_VAULT_REMOTE_URL` in that machine's wrapper or local secrets file. Other
+useful overrides are `DGR_VAULT_ROOT`, `DGR_VAULT_REMOTE`, and
+`DGR_VAULT_BRANCH`.
+
+Wrapper installers can expose them with ordinary symlinks, for example:
+
+```bash
+ln -s "$PWD/common/bin/vault-mcp-stdio" "$HOME/.local/bin/vault-mcp-stdio"
+ln -s "$PWD/common/bin/dgr-vault-git-sync" "$HOME/.local/bin/dgr-vault-git-sync"
+```
+
+Prefer a wrapper-specific shim or environment file for private defaults (for
+example a private vault remote URL) rather than committing those defaults here.
 
 Wrapper repositories typically just symlink these local files from their `work/` or `personal/` areas and keep `~/.vimrc`, `~/.zshrc`, and `~/.gitconfig` pointing at common.
 

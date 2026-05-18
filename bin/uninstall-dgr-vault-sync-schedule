@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Remove the vault git sync schedule from this machine.
+
+set -euo pipefail
+
+LABEL="com.dgr.vault-git-sync"
+VAULT_ROOT="${DGR_VAULT_ROOT:-$HOME/vault}"
+LOG_DIR="${DGR_VAULT_SYNC_LOG_DIR:-$VAULT_ROOT/.vault-system/logs}"
+LOOP_PID_FILE="$LOG_DIR/vault-git-sync.loop.pid"
+
+if [[ "$(uname -s)" == "Darwin" ]]; then
+  uid="$(id -u)"
+  launchctl bootout "gui/${uid}/${LABEL}" >/dev/null 2>&1 || true
+  rm -f "$HOME/Library/LaunchAgents/${LABEL}.plist"
+  printf 'removed launchd job: %s\n' "$LABEL"
+  exit 0
+fi
+
+if command -v crontab >/dev/null 2>&1; then
+  tmp="$(mktemp)"
+  trap 'rm -f "$tmp"' EXIT
+  (crontab -l 2>/dev/null || true) | grep -vF "$LABEL" >"$tmp" || true
+  if [[ -s "$tmp" ]]; then
+    crontab "$tmp"
+  else
+    crontab -r >/dev/null 2>&1 || true
+  fi
+fi
+
+if [[ -f "$LOOP_PID_FILE" ]]; then
+  old_pid="$(cat "$LOOP_PID_FILE" 2>/dev/null || true)"
+  if [[ -n "$old_pid" ]] && kill -0 "$old_pid" >/dev/null 2>&1; then
+    kill "$old_pid" >/dev/null 2>&1 || true
+  fi
+  rm -f "$LOOP_PID_FILE"
+fi
+
+printf 'removed cron job: %s\n' "$LABEL"

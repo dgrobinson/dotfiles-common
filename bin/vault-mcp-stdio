@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Start the local vault MCP server in stdio mode for Codex.
+
+set -euo pipefail
+
+VAULT_MCP_REPO="${VAULT_MCP_REPO:-$HOME/code/vault-mcp}"
+VAULT_ROOT="${DGR_VAULT_ROOT:-$HOME/vault}"
+# Optional backing checkout for VAULT_ROOT.  Keep this default non-company
+# specific: dotfiles-common is public and is used from both home and work
+# machines.  Set DGR_VAULT_REPO_ROOT and DGR_VAULT_REMOTE_URL in a local
+# overlay if you want this launcher to bootstrap a missing vault checkout.
+VAULT_REPO_ROOT="${DGR_VAULT_REPO_ROOT:-$HOME/code/vault-notes}"
+VAULT_REMOTE_URL="${DGR_VAULT_REMOTE_URL:-}"
+
+if [[ ! -d "$VAULT_MCP_REPO/src/vault_mcp" ]]; then
+  printf 'vault-mcp repo not found at %s\n' "$VAULT_MCP_REPO" >&2
+  exit 1
+fi
+
+ensure_vault_root() {
+  if [[ -d "$VAULT_ROOT/.git" ]]; then
+    return 0
+  fi
+
+  # Clean up a broken symlink so it can be recreated below.  A valid symlink to
+  # a git checkout is handled by the .git test above on both macOS and Linux.
+  if [[ -L "$VAULT_ROOT" && ! -e "$VAULT_ROOT" ]]; then
+    rm "$VAULT_ROOT"
+  fi
+
+  if [[ -e "$VAULT_ROOT" ]]; then
+    printf 'vault root exists but is not a git checkout: %s\n' "$VAULT_ROOT" >&2
+    exit 1
+  fi
+
+  if [[ ! -d "$VAULT_REPO_ROOT/.git" ]]; then
+    if [[ -e "$VAULT_REPO_ROOT" ]]; then
+      printf 'vault repo root exists but is not a git checkout: %s\n' "$VAULT_REPO_ROOT" >&2
+      exit 1
+    fi
+    if [[ -z "$VAULT_REMOTE_URL" ]]; then
+      cat >&2 <<EOF
+vault checkout not found.
+
+Either create $VAULT_ROOT as a git checkout, or set both:
+  DGR_VAULT_REPO_ROOT=<backing checkout path>
+  DGR_VAULT_REMOTE_URL=<git remote URL>
+
+This launcher intentionally has no built-in private/company remote default.
+EOF
+      exit 1
+    fi
+    mkdir -p "$(dirname "$VAULT_REPO_ROOT")"
+    git clone "$VAULT_REMOTE_URL" "$VAULT_REPO_ROOT" >&2
+  fi
+
+  ln -s "$VAULT_REPO_ROOT" "$VAULT_ROOT"
+}
+
+ensure_vault_root
+
+PYTHON_BIN="${VAULT_MCP_PYTHON:-}"
+if [[ -z "$PYTHON_BIN" ]]; then
+  if [[ -x "$VAULT_MCP_REPO/.venv/bin/python" ]]; then
+    PYTHON_BIN="$VAULT_MCP_REPO/.venv/bin/python"
+  else
+    PYTHON_BIN="python3"
+  fi
+fi
+
+export PYTHONPATH="$VAULT_MCP_REPO/src${PYTHONPATH:+:$PYTHONPATH}"
+# DGR's vault treats filenames/headings as the note identity. Obsidian renders
+# YAML `title`/`tags` as a distracting properties panel, and agents tend to
+# cargo-cult those keys from generic Obsidian templates. Strip them at the MCP
+# boundary so accidental metadata does not keep reappearing.
+export VAULT_MCP_STRIP_FRONTMATTER_KEYS="${VAULT_MCP_STRIP_FRONTMATTER_KEYS:-title,tags}"
+exec "$PYTHON_BIN" -m vault_mcp.mcp_server --vault-root "$VAULT_ROOT"
