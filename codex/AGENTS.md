@@ -90,12 +90,13 @@ If you need the git root, prefer:
 
 ## Remote Codex box on DigitalOcean
 
-- The current remote Codex Droplet is `codex-box` at `157.245.81.87`.
+- The current remote Codex Droplet is `codex-box` at `68.183.141.62`.
   - Local SSH shortcut: `ssh codex-box`
-  - DigitalOcean ID: `571314844`
+  - DigitalOcean ID: `575783325`
   - Region/size: `nyc1`, `s-2vcpu-4gb` (about $24/month while it exists)
   - OS: Ubuntu 24.04
-- This box replaced the old `homespace-staging` Droplet, which was destroyed on May 16, 2026.
+- The original `codex-box` Droplet (`571314844`, `157.245.81.87`) became unreachable after an OS-level firewall rule was locked to an old client IP; it was replaced and destroyed on June 6, 2026.
+- Do not add a second per-IP `ufw` lock inside Ubuntu. Use the DigitalOcean cloud firewall `codex-box-ssh-only` as the source-IP control point.
 - The box has Node.js 20, Git, GitHub CLI, Codex CLI, Python, build tools, ripgrep, tmux, and zsh installed.
 - The box has the dotfiles wrapper cloned at `/home/codex/code/dgr-dotfiles`; helper scripts are available as `create-agent`, `codexplex`, and `codex-batch-panes`.
 - GitHub operations on the box use `gh` HTTPS credentials plus URL rewriting for `git@github.com:` remotes and submodules.
