@@ -115,6 +115,9 @@ If you need the git root, prefer:
 - The GitHub backup timer is `dgr-collab-sync.timer`; it runs separately from Obsidian Headless and mirrors the live vault to GitHub every five minutes.
 - Run only one automated Git backup bridge for `dgr-collab` at a time, preferably on `codex-box`, to avoid duplicate backup commits from multiple Obsidian-synced devices.
 - DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
+- `codex-box` is also joined to Tailscale as `codex-box` at `100.73.192.35`, for anywhere SSH access without opening public SSH broadly.
+- SSH password authentication is enabled only for user `codex` from Tailscale source addresses (`100.64.0.0/10`) via the final block in `/etc/ssh/sshd_config`; public-source password SSH remains disabled.
+- For ChatGPT mobile Codex SSH remotes, use host `100.73.192.35`, user `codex`, project folder `/home/codex/workshop`, and Codex command `/usr/bin/codex`.
 - Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
 - Before assuming the cloud state, verify it:
   - `doctl compute droplet list`
