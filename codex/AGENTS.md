@@ -107,7 +107,10 @@ If you need the git root, prefer:
 - `vault-mcp` is cloned on the box at `/home/codex/code/vault-mcp`, built with npm, and registered in remote Codex as MCP server `vault-mcp`.
 - `dgr-collab` is vault content only. Do not add sync scripts, service files, binaries, or operational tooling to that repo; keep automation in dotfiles or machine-local service config.
 - When Obsidian Headless Sync is configured for `dgr-collab`, treat Obsidian Sync as the live cross-device sync layer and GitHub as backup/audit only.
+- Obsidian Headless is installed on `codex-box` at `/home/codex/.local/opt/obsidian-headless`, using a local Node 22 install so the system Node 20 runtime stays unchanged.
+- The continuous live sync service is `obsidian-dgr-collab-sync.service`; inspect it with `systemctl status obsidian-dgr-collab-sync.service` and `journalctl -u obsidian-dgr-collab-sync.service`.
 - The dotfiles helper `dgr-collab-sync` is backup-only: it commits stageable local vault changes and pushes them to `origin/main`; it refuses to pull or rebase GitHub changes back into the live vault.
+- The GitHub backup timer is `dgr-collab-sync.timer`; it runs separately from Obsidian Headless and mirrors the live vault to GitHub every five minutes.
 - Run only one automated Git backup bridge for `dgr-collab` at a time, preferably on `codex-box`, to avoid duplicate backup commits from multiple Obsidian-synced devices.
 - DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
 - Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
