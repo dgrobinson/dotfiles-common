@@ -106,7 +106,9 @@ If you need the git root, prefer:
 - The local collab vault at `/Users/dgrobinson/vaults/dgr-collab` is backed by private GitHub repo `dgrobinson/dgr-collab`.
 - `vault-mcp` is cloned on the box at `/home/codex/code/vault-mcp`, built with npm, and registered in remote Codex as MCP server `vault-mcp`.
 - `dgr-collab` is vault content only. Do not add sync scripts, service files, binaries, or operational tooling to that repo; keep automation in dotfiles or machine-local service config.
-- Vault propagation uses the dotfiles helper `dgr-collab-sync` outside the vault. It commits stageable local changes, pulls/rebases from `origin/main`, pushes, and fails closed on conflicts.
+- When Obsidian Headless Sync is configured for `dgr-collab`, treat Obsidian Sync as the live cross-device sync layer and GitHub as backup/audit only.
+- The dotfiles helper `dgr-collab-sync` is backup-only: it commits stageable local vault changes and pushes them to `origin/main`; it refuses to pull or rebase GitHub changes back into the live vault.
+- Run only one automated Git backup bridge for `dgr-collab` at a time, preferably on `codex-box`, to avoid duplicate backup commits from multiple Obsidian-synced devices.
 - DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
 - Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
 - Before assuming the cloud state, verify it:

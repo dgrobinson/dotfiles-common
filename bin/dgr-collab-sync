@@ -95,34 +95,34 @@ commit_changes() {
   log "committed: $subject"
 }
 
-sync_remote() {
+backup_remote() {
   git -C "$REPO" fetch --prune "$REMOTE" "$BRANCH"
 
   if ! git -C "$REPO" show-ref --verify --quiet "refs/remotes/$REMOTE/$BRANCH"; then
-    fail "missing remote ref $REMOTE/$BRANCH"
+    git -C "$REPO" push -u "$REMOTE" "HEAD:$BRANCH"
+    log "pushed initial backup branch"
+    return 0
   fi
 
   if git -C "$REPO" merge-base --is-ancestor "$REMOTE/$BRANCH" HEAD; then
     if git -C "$REPO" merge-base --is-ancestor HEAD "$REMOTE/$BRANCH"; then
-      log "already up to date"
+      log "backup already current"
       return 0
     fi
     git -C "$REPO" push "$REMOTE" "HEAD:$BRANCH"
-    log "pushed local commits"
+    log "pushed backup commits"
     return 0
   fi
 
-  git -C "$REPO" rebase "$REMOTE/$BRANCH" || fail "rebase conflict; manual resolution required"
-  git -C "$REPO" push "$REMOTE" "HEAD:$BRANCH"
-  log "rebased onto remote and pushed"
+  fail "remote $REMOTE/$BRANCH has commits not present locally; refusing to pull because Obsidian Sync is the live source of truth"
 }
 
-log "sync start: $REPO"
+log "backup start: $REPO"
 
 if has_worktree_changes; then
   commit_changes
 fi
 
-sync_remote
+backup_remote
 
-log "sync complete"
+log "backup complete"
