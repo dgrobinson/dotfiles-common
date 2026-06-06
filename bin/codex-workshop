@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd /home/codex/workshop
+exec codex \
+  --cd /home/codex/workshop \
+  --add-dir /home/codex/vaults/dgr-collab \
+  "$@"

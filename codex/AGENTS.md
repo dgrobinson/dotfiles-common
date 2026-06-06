@@ -98,8 +98,10 @@ If you need the git root, prefer:
 - The original `codex-box` Droplet (`571314844`, `157.245.81.87`) became unreachable after an OS-level firewall rule was locked to an old client IP; it was replaced and destroyed on June 6, 2026.
 - Do not add a second per-IP `ufw` lock inside Ubuntu. Use the DigitalOcean cloud firewall `codex-box-ssh-only` as the source-IP control point.
 - The box has Node.js 20, Git, GitHub CLI, Codex CLI, Python, build tools, ripgrep, tmux, and zsh installed.
-- The box has the dotfiles wrapper cloned at `/home/codex/code/dgr-dotfiles`; helper scripts are available as `create-agent`, `codexplex`, and `codex-batch-panes`.
+- The box has the dotfiles wrapper cloned at `/home/codex/code/dgr-dotfiles`; helper scripts are available as `create-agent`, `codexplex`, `codex-batch-panes`, and `codex-workshop`.
 - GitHub operations on the box use `gh` HTTPS credentials plus URL rewriting for `git@github.com:` remotes and submodules.
+- Use `/home/codex/workshop` as the Codex working folder for vault/memo work. It is separate from the synced vault and has a local `.codex/config.toml` that grants write access to `/home/codex/vaults/dgr-collab`.
+- `codex-workshop` starts Codex in `/home/codex/workshop` with `/home/codex/vaults/dgr-collab` added as a writable directory.
 - Vaults on the box:
   - Main vault: `/home/codex/vaults/dgr`, cloned from private repo `dgrobinson/dgr-obsidian`, and intended as read-only source material.
   - Collaboration vault: `/home/codex/vaults/dgr-collab`, cloned from private repo `dgrobinson/dgr-collab`, and intended as the writable agent workspace.
