@@ -117,7 +117,8 @@ If you need the git root, prefer:
 - DigitalOcean firewall `codex-box-ssh-only` allows inbound SSH only from the current trusted public IP. If SSH stops working after a network change, update that firewall rule rather than opening SSH broadly.
 - `codex-box` is also joined to Tailscale as `codex-box` at `100.73.192.35`, for anywhere SSH access without opening public SSH broadly.
 - SSH password authentication is enabled only for user `codex` from Tailscale source addresses (`100.64.0.0/10`) via the final block in `/etc/ssh/sshd_config`; public-source password SSH remains disabled.
-- For ChatGPT mobile Codex SSH remotes, use host `100.73.192.35`, user `codex`, project folder `/home/codex/workshop`, and Codex command `/usr/bin/codex`.
+- For ChatGPT mobile Codex SSH remotes, use host `100.73.192.35`, user `codex`, project folder `/home/codex/workshop`, and Codex command `/home/codex/.local/bin/codex`.
+- `codex remote-control` requires the managed standalone install at `/home/codex/.codex/packages/standalone/current/codex`; `/usr/bin/codex` is the older npm-managed binary and should not be used for mobile remote setup.
 - Billing guardrail: powered-off Droplets still bill because their resources remain reserved. Destroy `codex-box` when it is no longer needed, after confirming no needed work remains on the machine.
 - Before assuming the cloud state, verify it:
   - `doctl compute droplet list`
