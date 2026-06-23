@@ -32,11 +32,14 @@ REPLACEMENTS = {
     "\u201d": "''",
     "\u2013": "--",
     "\u2014": "---",
+    "\u2011": "-",
     "\u2026": "...",
+    "\u2060": "",
     "\u2212": "-",
     "\u02c8": "'",
     "\u02b2": "y",
     "\u0268": "y",
+    "\U0001f4af": "100",
     "\u0411": "B",
     "\u0435": "e",
     "\u0441": "s",
@@ -71,6 +74,8 @@ CONTENT_TYPE_IMAGE_EXT = {
     "image/webp": ".webp",
 }
 LATEX_IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".pdf"}
+TOC_PLACEHOLDER = "% ELEGANT_PRINT_TOC_PLACEHOLDER\n"
+TOC_CONTENT_PAGE_THRESHOLD = 10
 CONTENT_HINT_TOKENS = (
     "article",
     "entry-content",
@@ -190,6 +195,19 @@ def href_target(url: str) -> str:
 
 def collapse_ws(s: str) -> str:
     return re.sub(r"\s+", " ", s or "").strip()
+
+
+def filename_stem(s: str, default: str = "elegant-print") -> str:
+    stem = collapse_ws(normalize_text(s))
+    stem = re.sub(r'[/:*?"<>|]+', "", stem)
+    stem = re.sub(r"\s+", " ", stem).strip(" .")
+    if len(stem) > 110:
+        stem = stem[:110].rstrip(" .")
+    return stem or default
+
+
+def default_download_pdf(stem: str) -> Path:
+    return Path.home() / "Downloads" / f"{filename_stem(stem)}.pdf"
 
 
 def direct_tags(node: Tag) -> list[Tag]:
@@ -1223,6 +1241,9 @@ def render_blocks(
         nonlocal flow_words, flow_blocks
         if not tex:
             return
+        tex = re.sub(r"^(?:\\\\\s*)+", "", tex)
+        if not tex:
+            return
         flow_parts.append(tex)
         flow_words += words
         flow_blocks += 1
@@ -1374,7 +1395,15 @@ def render_blocks(
     return parts
 
 
-def latex_preamble(title: str, subtitle: str, footer: str, columns: int, paper: str, hybrid: bool = False) -> str:
+def latex_preamble(
+    title: str,
+    subtitle: str,
+    footer: str,
+    columns: int,
+    paper: str,
+    hybrid: bool = False,
+    include_toc: bool | None = None,
+) -> str:
     if paper == "7x10":
         geometry = "paperwidth=7in,paperheight=10in,top=0.9in,bottom=1.0in,inner=1.0in,outer=1.6in,includeheadfoot"
         doc_opts = "11pt,twoside"
@@ -1388,6 +1417,12 @@ def latex_preamble(title: str, subtitle: str, footer: str, columns: int, paper: 
     multicol_pkg = "\\usepackage{multicol}\n" if use_multicol else ""
     multicol_begin = "\\begin{multicols}{2}\n" if columns == 2 and not hybrid else ""
     multicol_end = "\\end{multicols}\n" if columns == 2 and not hybrid else ""
+    if include_toc is True:
+        toc_block = "\\tableofcontents\n\\newpage\n\n"
+    elif include_toc is False:
+        toc_block = ""
+    else:
+        toc_block = TOC_PLACEHOLDER
 
     subtitle_block = f"{{\\Large\\itshape {subtitle}}}\\\\[0.8em]" if subtitle else ""
     footer_block = f"{{\\large\\color{{Muted}} {footer}}}" if footer else ""
@@ -1462,12 +1497,7 @@ def latex_preamble(title: str, subtitle: str, footer: str, columns: int, paper: 
   pdftitle={{{title}}}
 }}
 
-\\IfFileExists{{fontawesome5.sty}}{{%
-  \\usepackage{{fontawesome5}}%
-  \\newcommand{{\\linkicon}}{{\\raisebox{{0.04em}}{{\\scalebox{{0.72}}{{\\faExternalLink*}}}}}}%
-}}{{%
-  \\newcommand{{\\linkicon}}{{\\raisebox{{0.05em}}{{\\scalebox{{0.72}}{{$\\nearrow$}}}}}}%
-}}
+\\newcommand{{\\linkicon}}{{\\raisebox{{0.05em}}{{\\scalebox{{0.72}}{{$\\nearrow$}}}}}}
 
 \\newcommand{{\\modelbadge}}[3]{{%
   \\begingroup
@@ -1588,9 +1618,7 @@ def latex_preamble(title: str, subtitle: str, footer: str, columns: int, paper: 
 \\end{{center}}
 \\vspace{{0.7em}}
 
-\\tableofcontents
-\\newpage
-
+{toc_block}
 {multicol_begin}
 """
 
@@ -1602,6 +1630,7 @@ def build_web_tex(url: str, columns: int, paper: str, outdir: Path, hybrid: bool
     soup = soup_with_fallback(html)
 
     title_text, subtitle_text = infer_web_title(soup, url)
+    raw_title_text = title_text
     doc_date = infer_web_date(soup, url)
     if doc_date:
         date_label = f"Published {doc_date}"
@@ -1641,7 +1670,7 @@ def build_web_tex(url: str, columns: int, paper: str, outdir: Path, hybrid: bool
     preamble, closing = latex_preamble(title_text, subtitle_text, footer, columns, paper, hybrid=hybrid)
     body = "".join(body_parts)
     tex = preamble + body + "\n" + closing + "\\end{document}\n"
-    return tex, title_text
+    return tex, raw_title_text
 
 
 def format_paragraphs(text: str) -> str:
@@ -1691,12 +1720,30 @@ def build_csv_tex(csv_path: Path, columns: int, paper: str) -> str:
     return tex
 
 
-def write_and_compile(tex: str, outdir: Path, basename: str, open_pdf: bool) -> Path:
+def write_and_compile(tex: str, outdir: Path, basename: str, open_pdf: bool, outfile: Path | None = None) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
     tex_path = outdir / f"{basename}.tex"
-    tex_path.write_text(tex, encoding="utf-8")
-    subprocess.run(["tectonic", "-X", "compile", str(tex_path), "--outdir", str(outdir)], check=True)
     pdf_path = outdir / f"{basename}.pdf"
+
+    def compile_tex(final_tex: str) -> None:
+        tex_path.write_text(final_tex, encoding="utf-8")
+        subprocess.run(["tectonic", "-X", "compile", str(tex_path), "--outdir", str(outdir)], check=True)
+
+    if TOC_PLACEHOLDER in tex:
+        no_toc_tex = tex.replace(TOC_PLACEHOLDER, "")
+        compile_tex(no_toc_tex)
+        content_pages = len(PdfReader(str(pdf_path)).pages)
+        if content_pages >= TOC_CONTENT_PAGE_THRESHOLD:
+            compile_tex(tex.replace(TOC_PLACEHOLDER, "\\tableofcontents\n\\newpage\n\n"))
+    else:
+        compile_tex(tex)
+
+    if outfile is not None:
+        outfile = outfile.expanduser().resolve()
+        outfile.parent.mkdir(parents=True, exist_ok=True)
+        if pdf_path.resolve() != outfile:
+            pdf_path.replace(outfile)
+        pdf_path = outfile
     if open_pdf:
         subprocess.run(["open", str(pdf_path)], check=False)
     return pdf_path
@@ -1802,7 +1849,8 @@ def main() -> None:
 
     web = sub.add_parser("web", help="Render a web page to a print-ready PDF")
     web.add_argument("url", help="URL to render")
-    web.add_argument("--outdir", default=".", help="Output directory")
+    web.add_argument("--outdir", default="", help="Output directory for intermediate files")
+    web.add_argument("--outfile", default="", help="Final PDF path; defaults to ~/Downloads/<title>.pdf")
     web.add_argument("--columns", type=int, choices=[1, 2], default=1, help="Column count")
     web.add_argument("--paper", choices=["letter", "7x10"], default="letter", help="Paper size")
     web.add_argument(
@@ -1825,40 +1873,56 @@ def main() -> None:
 
     csvp = sub.add_parser("csv", help="Render a CSV to a print-ready PDF")
     csvp.add_argument("csv_path", help="Path to CSV")
-    csvp.add_argument("--outdir", default=".", help="Output directory")
+    csvp.add_argument("--outdir", default="", help="Output directory for intermediate files")
+    csvp.add_argument("--outfile", default="", help="Final PDF path; defaults to ~/Downloads/<csv-name>.pdf")
     csvp.add_argument("--columns", type=int, choices=[1, 2], default=1, help="Column count")
     csvp.add_argument("--paper", choices=["letter", "7x10"], default="letter", help="Paper size")
     csvp.add_argument("--open", action="store_true", help="Open PDF after render")
 
     args = parser.parse_args()
-    outdir = Path(args.outdir).expanduser().resolve()
+    tmp_ctx = None
+    if args.outdir:
+        outdir = Path(args.outdir).expanduser().resolve()
+    else:
+        tmp_ctx = TemporaryDirectory()
+        outdir = Path(tmp_ctx.name)
 
-    if args.cmd == "web":
-        columns = args.columns
-        if args.hybrid and columns == 2:
-            # Hybrid mode is one-column base layout with selective two-column prose clusters.
-            columns = 1
-        tex, doc_title = build_web_tex(args.url, columns, args.paper, outdir, hybrid=args.hybrid)
-        pdf = write_and_compile(tex, outdir, "elegant-print", args.open)
-        print(f"Wrote {pdf}")
-        if args.section_max_pages:
-            section_title = args.section_title.strip() or doc_title
-            sections = write_stapled_sections(
-                pdf_path=pdf,
-                outdir=outdir,
-                basename="elegant-print",
-                paper=args.paper,
-                section_max_pages=args.section_max_pages,
-                title=section_title,
-            )
-            print(f"Wrote {len(sections)} stapled sections:")
-            for p in sections:
-                print(f" - {p}")
-    elif args.cmd == "csv":
-        csv_path = Path(args.csv_path).expanduser().resolve()
-        tex = build_csv_tex(csv_path, args.columns, args.paper)
-        pdf = write_and_compile(tex, outdir, "elegant-print", args.open)
-        print(f"Wrote {pdf}")
+    try:
+        if args.cmd == "web":
+            columns = args.columns
+            if args.hybrid and columns == 2:
+                # Hybrid mode is one-column base layout with selective two-column prose clusters.
+                columns = 1
+            tex, doc_title = build_web_tex(args.url, columns, args.paper, outdir, hybrid=args.hybrid)
+            outfile = Path(args.outfile).expanduser().resolve() if args.outfile else None
+            if outfile is None and not args.outdir:
+                outfile = default_download_pdf(doc_title)
+            pdf = write_and_compile(tex, outdir, "elegant-print", args.open, outfile=outfile)
+            print(f"Wrote {pdf}")
+            if args.section_max_pages:
+                section_title = args.section_title.strip() or doc_title
+                sections = write_stapled_sections(
+                    pdf_path=pdf,
+                    outdir=pdf.parent if outfile is not None else outdir,
+                    basename=pdf.stem if outfile is not None else "elegant-print",
+                    paper=args.paper,
+                    section_max_pages=args.section_max_pages,
+                    title=section_title,
+                )
+                print(f"Wrote {len(sections)} stapled sections:")
+                for p in sections:
+                    print(f" - {p}")
+        elif args.cmd == "csv":
+            csv_path = Path(args.csv_path).expanduser().resolve()
+            tex = build_csv_tex(csv_path, args.columns, args.paper)
+            outfile = Path(args.outfile).expanduser().resolve() if args.outfile else None
+            if outfile is None and not args.outdir:
+                outfile = default_download_pdf(csv_path.stem)
+            pdf = write_and_compile(tex, outdir, "elegant-print", args.open, outfile=outfile)
+            print(f"Wrote {pdf}")
+    finally:
+        if tmp_ctx is not None:
+            tmp_ctx.cleanup()
 
 
 if __name__ == "__main__":

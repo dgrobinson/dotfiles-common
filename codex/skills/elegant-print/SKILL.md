@@ -12,13 +12,20 @@ Generate print-ready PDFs from web pages or CSV data using a consistent, Asteris
 
 - **Web page → PDF**
   ```bash
-  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py web "https://example.com" --outdir /Users/dgr/code/tmp/print --open
+  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py web "https://example.com" --outfile ~/Downloads/example-article.pdf --open
   ```
 
 - **CSV → PDF**
   ```bash
-  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py csv ~/Downloads/file.csv --outdir /Users/dgr/code/tmp/print --open
+  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py csv ~/Downloads/file.csv --outfile ~/Downloads/file-print.pdf --open
   ```
+
+## Laptop Output Default
+
+- When running on DGR's laptop, put final PDFs directly in the root of `~/Downloads` with descriptive filenames unless the user explicitly gives another destination.
+- Do not put final PDFs in per-document folders by default. Use `--outfile ~/Downloads/<descriptive-name>.pdf` when the desired filename is known.
+- If no `--outdir` or `--outfile` is provided, the script compiles in a temporary directory and writes `~/Downloads/<title>.pdf`.
+- Use `--outdir` only when the user needs the generated `.tex`, asset files, or other intermediates preserved.
 
 ## Core Workflow
 
@@ -36,10 +43,13 @@ Generate print-ready PDFs from web pages or CSV data using a consistent, Asteris
 
 ## Outputs
 
-- The script writes `elegant-print.tex` and `elegant-print.pdf` into the provided `--outdir`.
+- By default on this laptop, the script writes the final PDF to the root of `~/Downloads` using the document title or CSV name.
+- If `--outfile` is provided, the final PDF is written to that exact path.
+- If `--outdir` is provided, the script also preserves `elegant-print.tex`, assets, and intermediate files there.
 - For web pages, the PDF title uses the article/post title (usually the page `<h1>`).
 - When available, the web page publish date is shown in the title block (for example: `Published February 9, 2026`).
-- Front matter is compact: no dedicated cover page; title + ToC start on page 1.
+- Front matter is compact: no dedicated cover page.
+- A table of contents is included only when the rendered content is at least 10 pages, measured from a no-ToC compile.
 - Web renders include inline content images (decorative tiny avatars/icons are skipped).
 - Links are clickable in the PDF and styled in a distinct color with a subtle external-link icon (arrow out of a box); raw URLs are not printed inline.
 - Page numbers are **alternating outer corners** with the “/ total” in light gray.
