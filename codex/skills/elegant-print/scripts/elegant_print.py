@@ -4,7 +4,9 @@ import base64
 import csv
 import json
 import math
+import os
 import re
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -15,6 +17,10 @@ from urllib.parse import unquote_to_bytes, urljoin, urlparse
 import requests
 from bs4 import BeautifulSoup, NavigableString, Tag
 from pypdf import PdfReader, PdfWriter
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+WIDE_TABLE_FILTER = SCRIPT_DIR / "wide_tables.lua"
+DOCX_STYLE = SCRIPT_DIR / "docx_style.tex"
 
 HEADERS = {
     "User-Agent": (
@@ -208,6 +214,36 @@ def filename_stem(s: str, default: str = "elegant-print") -> str:
 
 def default_download_pdf(stem: str) -> Path:
     return Path.home() / "Downloads" / f"{filename_stem(stem)}.pdf"
+
+
+def require_command(name: str, purpose: str) -> None:
+    if shutil.which(name) is None:
+        raise RuntimeError(f"{name} is required {purpose}")
+
+
+def run_pandoc(
+    args: list[str],
+    *,
+    input_text: str | None = None,
+    env: dict[str, str] | None = None,
+    cwd: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
+    require_command("pandoc", "to render structured tables and DOCX files")
+    result = subprocess.run(
+        ["pandoc", *args],
+        input=input_text,
+        text=True,
+        capture_output=True,
+        env=env,
+        cwd=str(cwd) if cwd else None,
+        check=False,
+    )
+    if result.returncode != 0:
+        detail = collapse_ws(result.stderr) or f"exit status {result.returncode}"
+        raise RuntimeError(f"pandoc failed: {detail}")
+    if result.stderr.strip():
+        print(result.stderr.strip(), file=sys.stderr)
+    return result
 
 
 def direct_tags(node: Tag) -> list[Tag]:
@@ -584,18 +620,22 @@ def extract_main(soup: BeautifulSoup) -> Tag:
         ).lower()
 
     def metrics(node: Tag) -> dict[str, int]:
-        p_tags = node.find_all("p")
+        p_tags = [p for p in node.find_all("p") if p.find_parent("table") is None]
         paragraph_words = sum(word_count(p.get_text(" ", strip=True)) for p in p_tags)
+        tables = node.find_all("table")
+        table_words = sum(word_count(table.get_text(" ", strip=True)) for table in tables)
         total_words = word_count(node.get_text(" ", strip=True))
         return {
             "paragraph_words": paragraph_words,
             "paragraph_count": len(p_tags),
+            "table_words": table_words,
+            "table_count": len(tables),
             "heading_count": len(node.find_all(["h1", "h2", "h3"])),
             "link_count": len(node.find_all("a")),
             "list_count": len(node.find_all("li")),
             "tag_count": len(node.find_all(True)),
             "total_words": total_words,
-            "non_paragraph_words": max(total_words - paragraph_words, 0),
+            "non_paragraph_words": max(total_words - paragraph_words - table_words, 0),
         }
 
     def score(node: Tag) -> int:
@@ -607,17 +647,19 @@ def extract_main(soup: BeautifulSoup) -> Tag:
         value = 0
         value += data["paragraph_words"]
         value += data["paragraph_count"] * 46
+        value += int(data["table_words"] * 0.8)
+        value += data["table_count"] * 90
         value += data["heading_count"] * 18
         value -= int(data["tag_count"] * 1.7)
         value -= data["list_count"] * 4
         value -= data["link_count"] * 2
         value -= int(data["non_paragraph_words"] * 0.55)
 
-        if data["paragraph_count"] < 2:
+        if data["paragraph_count"] < 2 and data["table_count"] == 0:
             value -= 260
-        if data["paragraph_words"] < 120:
+        if data["paragraph_words"] + data["table_words"] < 120:
             value -= 320
-        if data["paragraph_words"] < 40:
+        if data["paragraph_words"] + data["table_words"] < 40:
             value -= 700
         if data["link_count"] > data["paragraph_count"] * 3 and data["paragraph_count"] < 6:
             value -= 220
@@ -662,7 +704,8 @@ def extract_main(soup: BeautifulSoup) -> Tag:
 
     rich_candidate = False
     for node in candidates:
-        if metrics(node)["paragraph_words"] >= 220:
+        data = metrics(node)
+        if data["paragraph_words"] >= 220 or data["table_words"] >= 80:
             rich_candidate = True
             break
 
@@ -675,7 +718,7 @@ def extract_main(soup: BeautifulSoup) -> Tag:
             if any(token in sig for token in CHROME_HINT_TOKENS):
                 continue
             if not any(token in sig for token in CONTENT_HINT_TOKENS):
-                if len(node.find_all("p", limit=4)) < 3:
+                if len(node.find_all("p", limit=4)) < 3 and node.find("table") is None:
                     continue
             seen.add(node_id)
             candidates.append(node)
@@ -1225,11 +1268,45 @@ def render_image_tag(node: Tag, image_store: ImageStore, caption_tex: str = "") 
     return render_image_block(image_path, final_caption)
 
 
+def render_html_table(
+    node: Tag,
+    page_url: str,
+    image_store: ImageStore | None = None,
+) -> str:
+    parsed = soup_with_fallback(str(node))
+    table = parsed.find("table")
+    if table is None:
+        return ""
+
+    for link in table.find_all("a", href=True):
+        link["href"] = urljoin(page_url, link.get("href", "")) if page_url else link.get("href", "")
+    for image in table.find_all("img"):
+        image_path = image_store.fetch(image) if image_store is not None else ""
+        if image_path:
+            image["src"] = image_path
+            continue
+        replacement = collapse_ws(image.get("alt", "")) or "[image]"
+        image.replace_with(replacement)
+
+    result = run_pandoc(
+        [
+            "--from=html",
+            "--to=latex",
+            "--wrap=none",
+            f"--lua-filter={WIDE_TABLE_FILTER}",
+        ],
+        input_text=str(table),
+    )
+    table_tex = result.stdout.replace("\\def\\LTcaptype{none}", "\\def\\LTcaptype{table}")
+    return table_tex.strip() + "\n\n"
+
+
 def render_blocks(
     container: Tag,
     converter: Converter,
     hybrid: bool = False,
     image_store: ImageStore | None = None,
+    columns: int = 1,
 ) -> list[str]:
     parts: list[str] = []
     flow_parts: list[str] = []
@@ -1266,6 +1343,9 @@ def render_blocks(
         if not isinstance(node, Tag):
             continue
 
+        if node.name != "table" and node.find_parent("table") is not None:
+            continue
+
         classes = node.get("class") or []
 
         # Preserve semantically rich Model Spec blocks as dedicated print components.
@@ -1292,6 +1372,17 @@ def render_blocks(
         if node.find_parent("div", class_="admonition-content") is not None:
             continue
 
+        if node.name == "table":
+            if node.find_parent("table") is not None:
+                continue
+            flush_flow()
+            table_tex = render_html_table(node, converter.page_url, image_store)
+            if table_tex:
+                if columns == 2 and not hybrid:
+                    parts.append("\\end{multicols}\n" + table_tex + "\\begin{multicols}{2}\n")
+                else:
+                    parts.append(table_tex)
+            continue
         if node.name in ("h1", "h2", "h3", "h4"):
             flush_flow()
             text, badges = extract_heading(node)
@@ -1444,6 +1535,14 @@ def latex_preamble(
 \\usepackage{{url}}
 \\usepackage{{xurl}}
 \\usepackage{{graphicx}}
+\\usepackage{{longtable}}
+\\usepackage{{booktabs}}
+\\usepackage{{array}}
+\\usepackage{{multirow}}
+\\usepackage{{calc}}
+\\usepackage{{pdflscape}}
+\\usepackage{{colortbl}}
+\\usepackage{{ragged2e}}
 \\usepackage[hidelinks]{{hyperref}}
 \\usepackage[bottom,hang,flushmargin]{{footmisc}}
 \\usepackage[most]{{tcolorbox}}
@@ -1608,6 +1707,14 @@ def latex_preamble(
 
 \\setlist[itemize]{{leftmargin=1.5em}}
 \\setlist[description]{{leftmargin=1.8em, labelsep=0.6em}}
+\\setlength{{\\tabcolsep}}{{4.6pt}}
+\\renewcommand{{\\arraystretch}}{{1.16}}
+\\setlength{{\\LTpre}}{{0.72\\baselineskip}}
+\\setlength{{\\LTpost}}{{0.82\\baselineskip}}
+\\setlength{{\\LTleft}}{{0pt}}
+\\setlength{{\\LTright}}{{0pt}}
+\\providecommand{{\\tightlist}}{{\\setlength{{\\itemsep}}{{0pt}}\\setlength{{\\parskip}}{{0pt}}}}
+\\providecommand{{\\real}}[1]{{#1}}
 
 \\begin{{document}}
 \\thispagestyle{{plain}}
@@ -1656,7 +1763,13 @@ def build_web_tex(url: str, columns: int, paper: str, outdir: Path, hybrid: bool
     converter = Converter(footnotes_by_id, footnotes_by_number, page_url=url)
     image_store = ImageStore(url, outdir)
 
-    body_parts = render_blocks(content, converter, hybrid=hybrid, image_store=image_store)
+    body_parts = render_blocks(
+        content,
+        converter,
+        hybrid=hybrid,
+        image_store=image_store,
+        columns=columns,
+    )
 
     title_text = latex_escape_plain(title_text)
     if " (" not in title_text and "(" in title_text:
@@ -1669,6 +1782,15 @@ def build_web_tex(url: str, columns: int, paper: str, outdir: Path, hybrid: bool
 
     preamble, closing = latex_preamble(title_text, subtitle_text, footer, columns, paper, hybrid=hybrid)
     body = "".join(body_parts)
+    if columns == 2 and not hybrid:
+        body = re.sub(
+            r"\\end\{landscape\}\s*\\begin\{multicols\}\{2\}\s*"
+            r"\\end\{multicols\}\s*\\begin\{landscape\}",
+            "\n",
+            body,
+        )
+    else:
+        body = re.sub(r"\\end\{landscape\}\s*\\begin\{landscape\}", "\n", body)
     tex = preamble + body + "\n" + closing + "\\end{document}\n"
     return tex, raw_title_text
 
@@ -1720,6 +1842,100 @@ def build_csv_tex(csv_path: Path, columns: int, paper: str) -> str:
     return tex
 
 
+def pandoc_inline_text(node) -> str:
+    if isinstance(node, list):
+        return "".join(pandoc_inline_text(item) for item in node)
+    if not isinstance(node, dict):
+        return ""
+    kind = node.get("t")
+    content = node.get("c")
+    if kind == "Str":
+        return str(content or "")
+    if kind in {"Space", "SoftBreak", "LineBreak"}:
+        return " "
+    if kind in {"MetaInlines", "Emph", "Strong", "Strikeout", "Superscript", "Subscript"}:
+        return pandoc_inline_text(content)
+    if kind == "Span" and isinstance(content, list) and len(content) > 1:
+        return pandoc_inline_text(content[1])
+    if kind == "Code" and isinstance(content, list) and len(content) > 1:
+        return str(content[1])
+    return ""
+
+
+def infer_docx_title(docx_path: Path) -> str:
+    result = run_pandoc([str(docx_path), "--from=docx", "--to=json"])
+    payload = json.loads(result.stdout)
+    title = pandoc_inline_text((payload.get("meta") or {}).get("title"))
+    return collapse_ws(title)
+
+
+def docx_geometry(paper: str) -> str:
+    if paper == "7x10":
+        return "paperwidth=7in,paperheight=10in,top=0.9in,bottom=1.0in,inner=1.0in,outer=1.6in,includeheadfoot"
+    return "letterpaper,top=1.1in,bottom=1.2in,inner=1.2in,outer=2.0in,includeheadfoot"
+
+
+def build_docx_tex(
+    docx_path: Path,
+    paper: str,
+    outdir: Path,
+    landscape_tables: list[int] | None = None,
+    portrait_tables: list[int] | None = None,
+) -> tuple[str, str]:
+    if not docx_path.is_file():
+        raise FileNotFoundError(f"DOCX source not found: {docx_path}")
+
+    outdir.mkdir(parents=True, exist_ok=True)
+    media_dir = outdir / "media"
+    tex_path = outdir / "pandoc-document.tex"
+    title = infer_docx_title(docx_path)
+
+    env = os.environ.copy()
+    env["ELEGANT_PRINT_LANDSCAPE_TABLES"] = ",".join(
+        str(number) for number in sorted(set(landscape_tables or []))
+    )
+    env["ELEGANT_PRINT_PORTRAIT_TABLES"] = ",".join(
+        str(number) for number in sorted(set(portrait_tables or []))
+    )
+
+    args = [
+        str(docx_path),
+        "--from=docx",
+        "--to=latex",
+        "--standalone",
+        "--pdf-engine=xelatex",
+        f"--lua-filter={WIDE_TABLE_FILTER}",
+        f"--include-in-header={DOCX_STYLE}",
+        f"--extract-media={media_dir}",
+        f"--output={tex_path}",
+        "--variable=documentclass:article",
+        "--variable=classoption:11pt,twoside",
+        f"--variable=geometry:{docx_geometry(paper)}",
+        "--variable=colorlinks:true",
+        "--variable=linkcolor:LinkColor",
+        "--variable=urlcolor:LinkColor",
+        "--variable=citecolor:LinkColor",
+        "--toc-depth=2",
+    ]
+    if not title:
+        title = filename_stem(docx_path.stem)
+        args.append(f"--metadata=title:{title}")
+
+    run_pandoc(args, env=env, cwd=outdir)
+    tex = tex_path.read_text(encoding="utf-8")
+    titled_tex, substitutions = re.subn(
+        r"(?m)^\\maketitle\s*$",
+        "\\\\maketitle\n" + TOC_PLACEHOLDER,
+        tex,
+        count=1,
+    )
+    if substitutions:
+        tex = titled_tex
+    else:
+        tex = tex.replace("\\begin{document}", "\\begin{document}\n" + TOC_PLACEHOLDER, 1)
+    return tex, title
+
+
 def write_and_compile(tex: str, outdir: Path, basename: str, open_pdf: bool, outfile: Path | None = None) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
     tex_path = outdir / f"{basename}.tex"
@@ -1727,7 +1943,28 @@ def write_and_compile(tex: str, outdir: Path, basename: str, open_pdf: bool, out
 
     def compile_tex(final_tex: str) -> None:
         tex_path.write_text(final_tex, encoding="utf-8")
-        subprocess.run(["tectonic", "-X", "compile", str(tex_path), "--outdir", str(outdir)], check=True)
+        if "\\begin{longtable}" in final_tex or "\\usepackage{fontspec}" in final_tex:
+            require_command("latexmk", "to compile table-rich Elegant Print PDFs")
+            require_command("xelatex", "to compile table-rich Elegant Print PDFs")
+            subprocess.run(
+                [
+                    "latexmk",
+                    "-xelatex",
+                    "-interaction=nonstopmode",
+                    "-halt-on-error",
+                    "-file-line-error",
+                    f"-outdir={outdir}",
+                    tex_path.name,
+                ],
+                cwd=outdir,
+                check=True,
+            )
+        else:
+            require_command("tectonic", "to compile Elegant Print PDFs")
+            subprocess.run(
+                ["tectonic", "-X", "compile", str(tex_path), "--outdir", str(outdir)],
+                check=True,
+            )
 
     if TOC_PLACEHOLDER in tex:
         no_toc_tex = tex.replace(TOC_PLACEHOLDER, "")
@@ -1844,7 +2081,9 @@ def write_stapled_sections(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate elegant print-ready PDFs from web pages or CSVs.")
+    parser = argparse.ArgumentParser(
+        description="Generate elegant print-ready PDFs from web pages, DOCX files, or CSVs."
+    )
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     web = sub.add_parser("web", help="Render a web page to a print-ready PDF")
@@ -1879,7 +2118,39 @@ def main() -> None:
     csvp.add_argument("--paper", choices=["letter", "7x10"], default="letter", help="Paper size")
     csvp.add_argument("--open", action="store_true", help="Open PDF after render")
 
+    docxp = sub.add_parser("docx", help="Render a DOCX or Google Docs export to a print-ready PDF")
+    docxp.add_argument("docx_path", help="Path to DOCX")
+    docxp.add_argument("--outdir", default="", help="Output directory for intermediate files")
+    docxp.add_argument("--outfile", default="", help="Final PDF path; defaults to ~/Downloads/<title>.pdf")
+    docxp.add_argument("--paper", choices=["letter", "7x10"], default="letter", help="Paper size")
+    docxp.add_argument(
+        "--landscape-table",
+        type=int,
+        action="append",
+        default=[],
+        metavar="N",
+        help="Force 1-based table N to landscape; may be repeated",
+    )
+    docxp.add_argument(
+        "--portrait-table",
+        type=int,
+        action="append",
+        default=[],
+        metavar="N",
+        help="Force 1-based table N to portrait; may be repeated",
+    )
+    docxp.add_argument("--open", action="store_true", help="Open PDF after render")
+
     args = parser.parse_args()
+    if args.cmd == "docx":
+        invalid_tables = [
+            number
+            for number in [*args.landscape_table, *args.portrait_table]
+            if number < 1
+        ]
+        if invalid_tables:
+            parser.error("table numbers must be positive, 1-based integers")
+
     tmp_ctx = None
     if args.outdir:
         outdir = Path(args.outdir).expanduser().resolve()
@@ -1918,6 +2189,20 @@ def main() -> None:
             outfile = Path(args.outfile).expanduser().resolve() if args.outfile else None
             if outfile is None and not args.outdir:
                 outfile = default_download_pdf(csv_path.stem)
+            pdf = write_and_compile(tex, outdir, "elegant-print", args.open, outfile=outfile)
+            print(f"Wrote {pdf}")
+        elif args.cmd == "docx":
+            docx_path = Path(args.docx_path).expanduser().resolve()
+            tex, doc_title = build_docx_tex(
+                docx_path,
+                args.paper,
+                outdir,
+                landscape_tables=args.landscape_table,
+                portrait_tables=args.portrait_table,
+            )
+            outfile = Path(args.outfile).expanduser().resolve() if args.outfile else None
+            if outfile is None and not args.outdir:
+                outfile = default_download_pdf(doc_title)
             pdf = write_and_compile(tex, outdir, "elegant-print", args.open, outfile=outfile)
             print(f"Wrote {pdf}")
     finally:

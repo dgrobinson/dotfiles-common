@@ -6,8 +6,16 @@
 - **Pagination**: alternating outer corners with light‑gray “/ total”.
 - **Paper**: default `letter` with wide outer margin; optional `7x10` for Asterisk‑like trim.
 - **Columns**: 1 by default; 2 for dense text with few footnotes.
+- **Wide tables**: tables with more than four substantive columns use landscape pages; simpler tables remain portrait.
+- **Substantive columns**: a column counts when any cell contains content. Columns that are empty in every row are removed before orientation is selected.
+- **Safe table cleanup**: empty-column removal is disabled when a row contains `rowspan`, `colspan`, or an irregular cell grid, preserving the source table structure.
+- **Manual orientation**: web tables may use `landscape` or `portrait` classes; DOCX renders accept repeatable, 1-based `--landscape-table N` and `--portrait-table N` overrides.
+- **Mixed orientation**: headings and short context stay with their wide tables, and adjacent landscape tables may share a landscape run.
+- **Two-column tables**: web tables leave the two-column prose flow and use the full page width.
 - **Front matter**: title on page 1 with no separate cover sheet; add a table of contents only when the content-only render is at least 10 pages.
 - **Date in title block**: when a source publish date can be detected, it is shown under the title.
 - **Web images**: inline article images are included by default; tiny decorative avatars/icons are skipped.
 - **Links**: rendered as clickable colored labels with an external-link icon (arrow out of a box); raw URL strings are not printed inline.
 - **Footnotes**: converts common endnote/footnote patterns (including Substack-style anchors) into same-page footnotes.
+- **Google Docs exports**: the DOCX path repairs exports that place all table rows in the repeating header, retaining the first row as the header and returning the rest to the body.
+- **Verification**: each table logs its original and final column counts, substantive columns, orientation, removed empty columns, and moved header rows. Visually inspect landscape transitions, repeated headers, row breaks, and pagination before delivery.

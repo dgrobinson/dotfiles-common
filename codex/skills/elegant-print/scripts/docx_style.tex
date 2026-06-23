@@ -1,0 +1,84 @@
+% Generic Elegant Print styling for Pandoc DOCX renders.
+\usepackage{fontspec}
+\usepackage{unicode-math}
+\usepackage{microtype}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{pdflscape}
+\usepackage{colortbl}
+\usepackage{ragged2e}
+
+\setmainfont{texgyreschola}[
+  Extension=.otf,
+  UprightFont=*-regular,
+  BoldFont=*-bold,
+  ItalicFont=*-italic,
+  BoldItalicFont=*-bolditalic
+]
+\setsansfont{texgyreheros}[
+  Extension=.otf,
+  UprightFont=*-regular,
+  BoldFont=*-bold,
+  ItalicFont=*-italic,
+  BoldItalicFont=*-bolditalic
+]
+\setmathfont{texgyreschola-math.otf}
+
+\definecolor{Accent}{HTML}{7A3B2E}
+\definecolor{LinkColor}{HTML}{245B93}
+\definecolor{Muted}{HTML}{6B6B6B}
+\definecolor{PageGray}{gray}{0.6}
+
+\setstretch{1.12}
+\raggedbottom
+\setlength{\emergencystretch}{3em}
+\setlength{\parindent}{1.1em}
+\setlength{\parskip}{0pt}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[description]{leftmargin=1.8em,labelsep=0.6em}
+
+\titleformat{\section}
+  {\sffamily\bfseries\Large\color{Accent}}
+  {}{0pt}{\Large}
+\titleformat{\subsection}
+  {\sffamily\bfseries\color{Accent}}
+  {}{0pt}{}
+\titleformat{\subsubsection}
+  {\sffamily\itshape\color{Accent}}
+  {}{0pt}{}
+\titleformat{\paragraph}[block]
+  {\sffamily\bfseries\color{Accent}}
+  {}{0pt}{}
+\titlespacing*{\paragraph}{0pt}{0.62\baselineskip}{0.18\baselineskip}
+
+\setlength{\tabcolsep}{4.6pt}
+\renewcommand{\arraystretch}{1.16}
+\setlength{\LTpre}{0.72\baselineskip}
+\setlength{\LTpost}{0.82\baselineskip}
+\setlength{\LTleft}{0pt}
+\setlength{\LTright}{0pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot[LE,RO]{\thepage\textcolor{PageGray}{ / \pageref{LastPage}}}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[LE,RO]{\thepage\textcolor{PageGray}{ / \pageref{LastPage}}}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+\makeatletter
+\renewcommand{\maketitle}{%
+  \begingroup
+  \begin{center}
+  {\LARGE\scshape\hyphenpenalty=10000\exhyphenpenalty=10000\@title\par}
+  \end{center}
+  \vspace{0.7em}
+  \endgroup
+}
+\makeatother
