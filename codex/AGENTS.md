@@ -25,6 +25,13 @@ Put judgment before evidence. Raw notes can preserve the source trail; agent-fac
 
 Keep instruction layers clean: cross-repo Codex defaults here, repo rules in the nearest `AGENTS.md`, vault writing rules in `~/vault/AGENTS.md` and `~/vault/agent-guidance/`.
 
+## Vault sync incident closure
+
+- Treat an alert clearing, a restart, a manual nudge, or one green sync cycle as recovery evidence, not resolution.
+- Keep a vault sync incident open until the root cause and any cascading design defect are fixed in their owning system, the fixes are durably landed, every affected role is deployed, and the full path is verified end to end.
+- Explicitly check the laptop replica, the authority Codex box, and PIA when they are in scope. Preserve the role boundaries: only the authority publishes Git, the laptop remains a non-publishing replica, and PIA remains MCP-only.
+- If an external dependency blocks durable repair, leave the incident visibly blocked with the exact owner or state change required. Do not close it on a workaround or symptom recovery alone.
+
 ## Repo layout: template clone + git worktrees (preferred)
 
 ELI5: A `git worktree` is an extra working folder that shares the same underlying git history as a base clone.
