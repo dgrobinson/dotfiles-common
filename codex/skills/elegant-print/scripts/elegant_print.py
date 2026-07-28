@@ -1809,9 +1809,17 @@ def format_paragraphs(text: str) -> str:
 def build_csv_tex(csv_path: Path, columns: int, paper: str) -> str:
     with csv_path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
-        rows = [row for row in reader if any((v or "").strip() for v in row.values())]
+        rows = [
+            row
+            for row in reader
+            if any(
+                value.strip()
+                for value in row.values()
+                if isinstance(value, str)
+            )
+        ]
 
-    title = latex_escape_plain("CSLAW 2026 Data")
+    title = latex_escape_plain(filename_stem(csv_path.stem))
     subtitle = latex_escape_plain(csv_path.name)
     footer = latex_escape_plain("Generated for print")
 
@@ -1833,6 +1841,16 @@ def build_csv_tex(csv_path: Path, columns: int, paper: str) -> str:
             parts.append(r"\noindent\textit{" + latex_escape_with_commands(authors) + "}")
         if abstract:
             parts.append(format_paragraphs(abstract))
+        for heading, value in row.items():
+            if heading in {"ID", "Title", "Authors", "Abstract"}:
+                continue
+            if not isinstance(value, str) or not value.strip():
+                continue
+            label = collapse_ws(str(heading or "Additional content"))
+            parts.append(
+                r"\noindent\textbf{" + latex_escape_plain(label) + r":} "
+                + format_paragraphs(value)
+            )
         block = "\n".join(parts)
         if block.strip():
             blocks.append(block)
