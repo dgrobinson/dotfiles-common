@@ -1,111 +1,75 @@
 ---
 name: elegant-print
-description: Create elegant, print-ready PDFs from web pages, Google Docs exports, DOCX files, or CSV files with Butterick-friendly line lengths, alternating outer page numbers, Asterisk-inspired typography, and automatic landscape handling for wide tables. Use when the user asks to convert a URL/article, document, or CSV into a beautiful PDF for printing, reading, or annotation, and when footnotes should stay near the text. Also use when the user wants single- or two-column print layouts.
+description: Create elegant, print-ready PDFs from articles, web pages, Google Docs exports, DOCX files, or CSVs using the original, quiet, Asterisk-inspired print layout, hanging footnotes, generous annotation margins, and tested wide-table handling.
 ---
 
 # Elegant Print
 
-## Overview
-Generate print-ready PDFs from web pages, DOCX documents, or CSV data using a consistent, Asterisk-inspired layout with note-friendly margins, alternating outer page numbers, optional two-column layouts, and mixed portrait/landscape pages for table-heavy documents.
+## Preserve the original design
 
-## Quick Start
+The output is the original Elegant Print design. Use 11 pt TeX Gyre Schola body text, TeX Gyre Heros headings, the original warm brown and blue, the compact centered title, indented paragraphs, mirrored annotation margins, ordinary inset quotations, and alternating outside page numbers.
 
-Resolve `scripts/elegant_print.py` relative to this `SKILL.md` when working from a checkout or worktree. The commands below use the normal installed-skill path.
+Do not replace that design with a giant headline, a publication overline, conspicuous pull-quote rules, ornamental boxes, or a different font. The user prefers the original format. Improve hanging footnotes, source extraction, and table behavior without changing the overall look.
 
-- **Web page → PDF**
-  ```bash
-  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py web "https://example.com" --outfile ~/Downloads/example-article.pdf --open
-  ```
+Treat a website as a source of article content, not a visual template. Preserve the source's substantive words, Unicode, links, images, captions, lists, heading structure, and genuine notes.
 
-- **CSV → PDF**
-  ```bash
-  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py csv ~/Downloads/file.csv --outfile ~/Downloads/file-print.pdf --open
-  ```
+## Quick start
 
-- **DOCX or Google Docs export → PDF**
-  ```bash
-  python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py docx ~/Downloads/document.docx --outfile ~/Downloads/document-print.pdf --open
-  ```
+Resolve `scripts/elegant_print.py` relative to this skill when working in a checkout. On this laptop, use the installed path:
 
-## Private Google Docs
+```bash
+# Original-format article.
+python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py \
+  web "https://example.com/article" \
+  --outfile ~/Downloads/example-article.pdf
 
-- Prefer a Google Drive export/download to DOCX. If Drive tooling is unavailable, use the authenticated browser's **File → Download → Microsoft Word (.docx)** action.
-- Render the local export with the `docx` command. Do not pass a private Google Docs URL to `web`; an unauthenticated fetch cannot reliably recover the document or its tables.
-- The DOCX renderer repairs the Google Docs export pattern that incorrectly marks every row in some tables as a repeating header.
+# Original-format CSV.
+python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py \
+  csv ~/Downloads/data.csv \
+  --outfile ~/Downloads/data-print.pdf
 
-## Laptop Output Default
+# Original-format Word document or exported Google Doc.
+python /Users/dgr/.codex/skills/elegant-print/scripts/elegant_print.py \
+  docx ~/Downloads/document.docx \
+  --outfile ~/Downloads/document-print.pdf
+```
 
-- When running on DGR's laptop, put final PDFs directly in the root of `~/Downloads` with descriptive filenames unless the user explicitly gives another destination.
-- Do not put final PDFs in per-document folders by default. Use `--outfile ~/Downloads/<descriptive-name>.pdf` when the desired filename is known.
-- If no `--outdir` or `--outfile` is provided, the script compiles in a temporary directory and writes `~/Downloads/<title>.pdf`.
-- Use `--outdir` only when the user needs the generated `.tex`, asset files, or other intermediates preserved.
+Add `--open` only when the user asks to open the resulting PDF.
 
-## Core Workflow
+## Layout
 
-1) **Pick input type**
-   - URL/article → `web`
-   - Local DOCX or private Google Docs export → `docx`
-   - CSV file → `csv`
+- Use `--paper letter` by default or `--paper 7x10` when the user requests the smaller original trim.
+- Use one prose column by default. Reserve `--columns 2` for reference material with few footnotes.
+- Keep the original letter margins: `1.2 in` inside and `2.0 in` outside.
+- Keep the original centered title, page-one treatment, paragraph indentation, colors, body and heading fonts, and outer-corner folios.
+- Use ordinary upright, inset quotations. Do not add a colored line or pull-quote bar.
+- Use hanging, flush-margin footnote labels and keep notes on the relevant page.
 
-2) **Choose layout options**
-   - For web and CSV, `--columns 1` (default) is best for footnote-heavy or long-form reading.
-   - For web and CSV, `--columns 2` is useful for compact reference-style reading with fewer footnotes.
-   - `--paper letter` (default) or `--paper 7x10` for a tighter, magazine-like trim.
-   - For DOCX only, repeat `--landscape-table N` or `--portrait-table N` to override the automatic orientation of 1-based table `N`.
+Use [Butterick's summary of key rules](https://practicaltypography.com/summary-of-key-rules.html), [block quotation guidance](https://practicaltypography.com/block-quotations.html), and [footnote guidance](https://typographyforlawyers.com/footnotes.html) as quality constraints. Do not trade away the user's preferred visual design to hit a particular measurement.
 
-3) **Render + open**
-   - Use `--open` to launch in Preview right after build.
+## Private Google Docs and wide tables
 
-4) **Verify table-heavy output**
-   - Read the per-table stderr lines for the original column count, substantive column count, selected orientation, removed empty columns, and repaired header rows.
-   - Open the final PDF and check every mixed-orientation transition, table header, row break, and outer page number before delivery.
-   - If the automatic choice is wrong for a DOCX table, rerender with a manual orientation override. Use `--outdir` when compiler logs and generated TeX are needed for diagnosis.
+Export private Google Docs to DOCX through Google Drive, then use the `docx` command. Do not fetch a private Google Docs URL with `web`.
 
-Table-rich web and DOCX rendering requires Pandoc, `latexmk`, and XeLaTeX. The script reports a direct dependency error if one is unavailable.
+Preserve the tested Pandoc, XeLaTeX, and Lua wide-table behavior: automatic landscape orientation, substantive-column detection, safe empty-column removal, repaired repeating Google Docs headers, and return to portrait pages.
 
-## Wide Tables
+Repeat `--landscape-table N` or `--portrait-table N` to override a positive, one-based DOCX table number. Inspect the resulting headers, page transitions, rows, and continuation pages.
 
-- Web and DOCX tables with more than four **substantive** columns automatically render on landscape pages. Columns that are empty in every row do not count toward the threshold.
-- Fully empty columns are removed only when every row has a simple one-cell-per-column shape. If any row uses `rowspan` or `colspan`, the table is left structurally unchanged.
-- Web tables may opt in or out with a `landscape` or `portrait` class. DOCX tables use the 1-based `--landscape-table N` and `--portrait-table N` overrides.
-- Adjacent wide tables may share one landscape run so short comparison tables do not each force a mostly empty page.
-- In web `--columns 2` mode, tables temporarily leave the two-column text flow and render at full page width.
+## Output and verification
 
-## Outputs
-
-- By default on this laptop, the script writes the final PDF to the root of `~/Downloads` using the document title or CSV name.
-- If `--outfile` is provided, the final PDF is written to that exact path.
-- If `--outdir` is provided, the script also preserves `elegant-print.tex`, assets, and intermediate files there.
-- For web pages, the PDF title uses the article/post title (usually the page `<h1>`).
-- For DOCX files, the PDF title uses document metadata when available and otherwise falls back to the filename.
-- When available, the web page publish date is shown in the title block (for example: `Published February 9, 2026`).
-- Front matter is compact: no dedicated cover page.
-- A table of contents is included only when the rendered content is at least 10 pages, measured from a no-ToC compile.
-- Web renders include inline content images (decorative tiny avatars/icons are skipped).
-- Links are clickable in the PDF and styled in a distinct color with a subtle external-link icon (arrow out of a box); raw URLs are not printed inline.
-- Page numbers are **alternating outer corners** with the “/ total” in light gray.
-- Margins are tuned for **handwritten notes** in the outer margin.
-
-## Notes on Footnotes
-
-- **Web pages**: the script converts common footnote patterns (Wikipedia refs, simple numbered footnotes, and Substack-style endnotes) into LaTeX footnotes so they appear on the same page.
-- **Two-column mode**: LaTeX footnotes in multicolumn layout can be less stable; prefer one column for heavy citation density.
-
-## Style Adjustments (Asterisk‑Inspired Feel)
-
-If the output needs to feel more like the Asterisk PDF sample:
-- Use `--paper 7x10` for trim proportion.
-- Keep `--columns 1` unless the source is short.
-- Adjust warm accent color or margins inside `scripts/elegant_print.py` (see `latex_preamble`).
-
-Refer to `references/style.md` for defaults.
+- Put final PDFs directly in `~/Downloads` unless the user requests another destination.
+- Honor the exact `--outfile`; do not create a final per-document directory.
+- Preserve the requested article title and source figures and keep meaningful links clickable.
+- Use `--outdir` only when intermediate TeX, downloaded assets, or diagnostics are requested.
+- Use the original LaTeX renderer for articles and CSVs and the existing Pandoc and XeLaTeX renderer for DOCX.
+- Report a missing required tool directly; do not silently substitute a visually different renderer.
+- Inspect the first and a representative reading page, checking that the output actually resembles the original Elegant Print format.
+- Run the classic article, CSV, hanging-footnote, and wide-table tests before delivery.
 
 ## Resources
 
-### scripts/
-- `elegant_print.py`: main renderer for web, DOCX, and CSV inputs, with layout and manual table-orientation options.
-- `wide_tables.lua`: Pandoc table normalization, substantive-column counting, and mixed-orientation handling.
-- `docx_style.tex`: Elegant Print typography and table styling for Pandoc DOCX conversion.
-
-### references/
-- `style.md`: layout defaults and typography notes.
+- `scripts/elegant_print.py`: original-format article, CSV, and DOCX rendering.
+- `scripts/docx_style.tex`: original Schola/Heros Word and Google Docs styling.
+- `scripts/wide_tables.lua`: tested table normalization and landscape orientation.
+- `references/style.md`: the original, user-preferred visual design.
+- `tests/`: original-format output, complete CSV records, hanging notes, and wide-table regression tests.

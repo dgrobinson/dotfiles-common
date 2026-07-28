@@ -1,21 +1,20 @@
 # Elegant Print Style Defaults
 
-- **Typeface**: TeX Gyre Schola (serif body) with TeX Gyre Heros for headings.
-- **Accent color**: warm brown `#7A3B2E`.
-- **Line length**: set via generous outer margin for note‑taking (Butterick‑style).
-- **Pagination**: alternating outer corners with light‑gray “/ total”.
-- **Paper**: default `letter` with wide outer margin; optional `7x10` for Asterisk‑like trim.
-- **Columns**: 1 by default; 2 for dense text with few footnotes.
-- **Wide tables**: tables with more than four substantive columns use landscape pages; simpler tables remain portrait.
-- **Substantive columns**: a column counts when any cell contains content. Columns that are empty in every row are removed before orientation is selected.
-- **Safe table cleanup**: empty-column removal is disabled when a row contains `rowspan`, `colspan`, or an irregular cell grid, preserving the source table structure.
-- **Manual orientation**: web tables may use `landscape` or `portrait` classes; DOCX renders accept repeatable, 1-based `--landscape-table N` and `--portrait-table N` overrides.
-- **Mixed orientation**: headings and short context stay with their wide tables, and adjacent landscape tables may share a landscape run.
-- **Two-column tables**: web tables leave the two-column prose flow and use the full page width.
-- **Front matter**: title on page 1 with no separate cover sheet; add a table of contents only when the content-only render is at least 10 pages.
-- **Date in title block**: when a source publish date can be detected, it is shown under the title.
-- **Web images**: inline article images are included by default; tiny decorative avatars/icons are skipped.
-- **Links**: rendered as clickable colored labels with an external-link icon (arrow out of a box); raw URL strings are not printed inline.
-- **Footnotes**: converts common endnote/footnote patterns (including Substack-style anchors) into same-page footnotes.
-- **Google Docs exports**: the DOCX path repairs exports that place all table rows in the repeating header, retaining the first row as the header and returning the rest to the body.
-- **Verification**: each table logs its original and final column counts, substantive columns, orientation, removed empty columns, and moved header rows. Visually inspect landscape transitions, repeated headers, row breaks, and pagination before delivery.
+Use the original, quiet, Asterisk-inspired print format. Improve the typesetting without replacing that visual design.
+
+- **Typeface:** 11 pt TeX Gyre Schola for the serif body and TeX Gyre Heros for headings.
+- **Accent color:** the original warm brown, `#7A3B2E`; use the original blue, `#245B93`, for links.
+- **Title:** the familiar, compact, centered small-cap title. Do not introduce an oversized headline, publication overline, or cover page.
+- **Paragraphs:** the original `1.1em` first-line indent with no extra paragraph gap.
+- **Line spacing:** the original `1.12` TeX stretch; judge the actual printed page.
+- **Margins:** on letter paper, keep the original `1.2 in` inside and `2.0 in` outside margins and original top and bottom proportions.
+- **Quotations:** use the original plain, modestly inset LaTeX `quote` environment. Never add pull-quote bars, colored rules, or decorative boxes.
+- **Footnotes:** keep same-page, hanging, flush-margin note numbers; preserve the original bottom-of-page placement.
+- **Pagination:** preserve alternating outer folios and the quiet light-gray `/ total`.
+- **Paper:** default to `letter`; retain the original `7x10` trim option.
+- **Columns:** use one column by default; reserve two columns for reference material.
+- **Contents:** preserve the original conditional contents behavior; do not force a new cover or contents treatment.
+- **Source content:** preserve substantive article text, figures, source links, headings, and citations. Do not imitate the source website.
+- **Wide tables:** preserve automatic landscape pages, substantive-column detection, safe empty-column cleanup, repeating headers, and manual DOCX orientation overrides.
+
+Use [Butterick's typography guidance](https://practicaltypography.com/summary-of-key-rules.html) and [footnote guidance](https://typographyforlawyers.com/footnotes.html) to make unobtrusive improvements. The user's preferred visual design takes precedence over numerical or stylistic redesign.
