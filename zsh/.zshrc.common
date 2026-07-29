@@ -47,6 +47,8 @@ export ZSH_CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/oh-my-zsh"
 ZSH_THEME="robbyrussell-fullpath"
 
 # Oh My Zsh settings
+# This vendored copy is updated through dotfiles, not Oh My Zsh's self-updater.
+zstyle ':omz:update' mode disabled
 HIST_STAMPS="yyyy-mm-dd"
 COMPLETION_WAITING_DOTS="true"
 
