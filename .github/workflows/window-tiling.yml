@@ -1,0 +1,35 @@
+name: Window tiling
+
+on:
+  pull_request:
+    paths:
+      - raycast/script-commands/dgr-workspace/**
+      - .github/workflows/window-tiling.yml
+  push:
+    branches: [main]
+    paths:
+      - raycast/script-commands/dgr-workspace/**
+      - .github/workflows/window-tiling.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  window-tiling:
+    runs-on: macos-15
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Compile the installed helper
+        run: swiftc raycast/script-commands/dgr-workspace/contextual-corner.swift -o "$RUNNER_TEMP/contextual-corner"
+      - name: Check repeated side commands
+        run: |
+          cat \
+            raycast/script-commands/dgr-workspace/contextual-corner.swift \
+            raycast/script-commands/dgr-workspace/tests/main.swift \
+            > "$RUNNER_TEMP/main.swift"
+          swiftc -D WINDOW_TILING_TESTS "$RUNNER_TEMP/main.swift" -o "$RUNNER_TEMP/window-tiling-tests"
+          "$RUNNER_TEMP/window-tiling-tests"
