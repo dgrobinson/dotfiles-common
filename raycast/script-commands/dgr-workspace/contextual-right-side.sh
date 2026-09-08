@@ -7,7 +7,7 @@
 
 # Optional parameters:
 # @raycast.packageName Window Tiling
-# @raycast.description Send the front window to the right third on big displays or right half on smaller displays.
+# @raycast.description On big landscape displays, alternate the front window between the right third and half; use the right half on smaller displays.
 # @raycast.icon R
 
 set -euo pipefail
