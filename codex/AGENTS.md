@@ -2,6 +2,13 @@
 
 This file is my global guidance for Codex (applies across repos).
 Do not add secrets here.
+## Scrivener read-only guardrail
+
+- Treat all of the user's Scrivener projects as read-only, including projects under `~/Dropbox/Scrivener/Scrivener Projects` and its resolved Dropbox location.
+- Read project files only. Do not create, edit, rename, move, delete, or otherwise change project files or their contents; do not request elevated permissions to do so.
+- Do not operate the Scrivener app on a live project; app interaction can cause writes. Read project files directly, or work with an explicitly created separate copy when needed.
+- Keep live Scrivener projects outside writable Codex workspaces and writable roots. Treat this instruction as a behavioral guardrail, not a substitute for filesystem isolation.
+
 ## Repo guardrails
 
 - Do not disrupt unstaged changes in this dotfiles repo (avoid autostash, reset, or checkout that alters the working tree).
