@@ -4,6 +4,7 @@ This file is my global guidance for Codex (applies across repos).
 Do not add secrets here.
 ## Scrivener read-only guardrail
 
+- On this Mac, use the local `scrivener-reader` tools to list projects, browse the binder, and read saved documents. Put requested notes or suggested edits in a separate destination such as `dgr-collab`.
 - Treat all of the user's Scrivener projects as read-only, including projects under `~/Dropbox/Scrivener/Scrivener Projects` and its resolved Dropbox location.
 - Read project files only. Do not create, edit, rename, move, delete, or otherwise change project files or their contents; do not request elevated permissions to do so.
 - Do not operate the Scrivener app on a live project; app interaction can cause writes. Read project files directly, or work with an explicitly created separate copy when needed.
